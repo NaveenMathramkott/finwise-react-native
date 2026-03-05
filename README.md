@@ -1,50 +1,38 @@
-# Welcome to your Expo app 👋
+# **FinWise - Personal Finance Management App**
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+FinWise is a comprehensive personal finance management application designed to empower users to take control of their financial well-being. With a suite of intelligent features powered by AI, FinWise simplifies expense tracking, provides actionable insights, and helps users achieve their financial goals.
 
-## Get started
+## Core Functionalities & User Benefits
 
-1. Install dependencies
+#### **1. Smart Expense Tracking**
 
-   ```bash
-   npm install
-   ```
+- Manual Entry: Users can log expenses with amount, category, date, and notes
+- Receipt Scanning (Bonus): Use device camera to extract expense details via AI
+- Recurring Expenses: Set up monthly bills (rent, subscriptions) for automatic tracking
 
-2. Start the app
+#### **2. AI-Powered Financial Chatbot**
 
-   ```bash
-   npx expo start
-   ```
+- Natural Language Queries: "How much did I spend on coffee this month?"
+- Spending Analysis: "Show me my largest expense categories"
+- Budget Advice: "I want to save $500 this month, what should I cut?"
+- Predictive Insights: "Based on my spending, what will I spend next month?"
 
-In the output, you'll find options to open the app in a
+#### **3. Visual Analytics Dashboard**
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Spending by Category: Pie charts showing where money goes
+- Daily/Weekly Trends: Line graphs of spending patterns
+- Budget Progress: Visual bars showing spending vs. budget
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+#### **4. Financial Health Score**
 
-## Get a fresh project
+- AI calculates a score based on:
+- Savings rate
+- Expense consistency
+- Debt-to-income ratio
+- Emergency fund status
 
-When you're ready, run:
+#### **5. Smart Alerts & Recommendations**
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- "You've spent 80% of your dining budget"
+- "Unusual spending detected in shopping category"
+- "Consider switching to a cheaper subscription"
