@@ -2,10 +2,10 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 
-const DashboardScreen = ({ navigation }) => {
+const AIAssistantScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
-      <Text variant="headlineMedium">DashboardScreen</Text>
+      <Text variant="headlineMedium">AIAssistantScreen</Text>
       <Button mode="contained" onPress={() => navigation.goBack()} style={styles.button}>
         Go Back
       </Button>
@@ -25,4 +25,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DashboardScreen;
+export default AIAssistantScreen;

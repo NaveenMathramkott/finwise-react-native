@@ -2,10 +2,10 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 
-const LoginScreen = ({ navigation }) => {
+const SettingsScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
-      <Text variant="headlineMedium">LoginScreen</Text>
+      <Text variant="headlineMedium">SettingsScreen</Text>
       <Button mode="contained" onPress={() => navigation.goBack()} style={styles.button}>
         Go Back
       </Button>
@@ -25,4 +25,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen;
+export default SettingsScreen;

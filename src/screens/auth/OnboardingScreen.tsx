@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 
-const OnboardingScreen = ({ navigation }) => {
+const OnboardingScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
       <Text variant="headlineMedium">Onboarding Screen</Text>

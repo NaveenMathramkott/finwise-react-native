@@ -1,3 +1,4 @@
+import React from 'react';
 import 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { Provider as StoreProvider } from 'react-redux';

@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+import { Button, Text } from 'react-native-paper';
 
-const RegisterScreen = ({ navigation }) => {
+const ReportsScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
-      <Text variant="headlineMedium">RegisterScreen</Text>
+      <Text variant="headlineMedium">ReportsScreen</Text>
       <Button mode="contained" onPress={() => navigation.goBack()} style={styles.button}>
         Go Back
       </Button>
@@ -25,4 +25,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RegisterScreen;
+export default ReportsScreen;
