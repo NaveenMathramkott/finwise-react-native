@@ -6,6 +6,7 @@ interface Expense {
   amount: number;
   category: string;
   date: string;
+  image?: string;
 }
 interface Category {
   id: number;
@@ -29,7 +30,78 @@ interface ExpensesState {
 }
 
 const initialState: ExpensesState = {
-  expenses: [],
+  expenses: [
+    {
+      id: "1",
+      title: "Groceries",
+      amount: 85.5,
+      category: "Food",
+      date: "2026-03-01",
+    },
+    {
+      id: "2",
+      title: "Gas Station",
+      amount: 45.0,
+      category: "Transport",
+      date: "2026-03-02",
+    },
+    {
+      id: "3",
+      title: "Netflix Subscription",
+      amount: 15.99,
+      category: "Entertainment",
+      date: "2026-03-03",
+    },
+    {
+      id: "4",
+      title: "Pharmacy",
+      amount: 22.4,
+      category: "Healthcare",
+      date: "2026-03-04",
+    },
+    {
+      id: "5",
+      title: "New Shoes",
+      amount: 120.0,
+      category: "Shopping",
+      date: "2026-03-05",
+    },
+    {
+      id: "6",
+      title: "Electricity Bill",
+      amount: 95.0,
+      category: "Bills",
+      date: "2026-03-06",
+    },
+    {
+      id: "7",
+      title: "Uber Ride",
+      amount: 18.5,
+      category: "Transport",
+      date: "2026-03-06",
+    },
+    {
+      id: "8",
+      title: "Restaurant Dinner",
+      amount: 65.0,
+      category: "Food",
+      date: "2026-03-05",
+    },
+    {
+      id: "9",
+      title: "Coffee Shop",
+      amount: 5.5,
+      category: "Food",
+      date: "2026-03-05",
+    },
+    {
+      id: "10",
+      title: "Amazon Purchase",
+      amount: 34.99,
+      category: "Shopping",
+      date: "2026-03-04",
+    },
+  ],
   filteredExpenses: [],
   categories: [
     { id: 1, name: "Food", icon: "fast-food", color: "#FF6B6B" },
@@ -106,4 +178,3 @@ export const {
 } = expensesSlice.actions;
 export default expensesSlice.reducer;
 export type { Expense, ExpensesState };
-

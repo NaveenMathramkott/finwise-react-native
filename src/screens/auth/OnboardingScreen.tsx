@@ -9,7 +9,7 @@ import {
  View,
  useWindowDimensions,
 } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button, Text as PaperText, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../utils/theme';
 
@@ -42,6 +42,7 @@ const slides: OnboardingSlide[] = [
 ];
 
 const OnboardingScreen = ({ navigation }: any) => {
+  const theme = useTheme();
   const { width } = useWindowDimensions();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -94,7 +95,7 @@ const OnboardingScreen = ({ navigation }: any) => {
                 key={index}
                 style={[
                   styles.indicator,
-                  { width: dotWidth, opacity, backgroundColor: COLORS.primary },
+                  { width: dotWidth, opacity, backgroundColor: theme.colors.primary },
                 ]}
               />
             );
@@ -162,7 +163,7 @@ const OnboardingScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Animated.FlatList
         ref={flatListRef}
         onMomentumScrollEnd={updateCurrentSlideIndex}
@@ -181,8 +182,8 @@ const OnboardingScreen = ({ navigation }: any) => {
               resizeMode="contain"
             />
             <View style={styles.textContainer}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.subtitle}>{item.subtitle}</Text>
+              <Text style={[styles.title, { color: theme.colors.primary }]}>{item.title}</Text>
+              <PaperText variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>{item.subtitle}</PaperText>
             </View>
           </View>
         )}

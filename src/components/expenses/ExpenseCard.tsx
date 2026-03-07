@@ -1,18 +1,79 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+import { Avatar, Card, Text, useTheme } from 'react-native-paper';
 
-const ExpenseCard = () => {
+interface ExpenseCardProps {
+  expense: {
+    id: string;
+    title: string;
+    amount: number;
+    category: string;
+    date: string;
+    image?: string;
+  };
+}
+
+const categoryIcons: { [key: string]: string } = {
+  Food: 'fast-food',
+  Transport: 'car',
+  Shopping: 'cart',
+  Entertainment: 'film',
+  Bills: 'document-text',
+  Healthcare: 'medical',
+  Education: 'school',
+  Other: 'ellipsis-horizontal',
+};
+
+const ExpenseCard = ({ expense }: ExpenseCardProps) => {
+  const theme = useTheme();
+  const iconName = categoryIcons[expense.category] || 'receipt';
+
   return (
-    <View style={styles.container}>
-      <Text>ExpenseCard Component</Text>
-    </View>
+    <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={1}>
+      <View style={styles.container}>
+        {expense.image ? (
+          <Avatar.Image
+            size={40}
+            source={{ uri: expense.image }}
+          />
+        ) : (
+          <Avatar.Icon 
+            size={40} 
+            icon={({ size, color }) => <Ionicons name={iconName as any} size={size - 10} color={color} />} 
+            style={{ backgroundColor: theme.colors.primaryContainer }}
+            color={theme.colors.primary}
+          />
+        )}
+        <View style={styles.details}>
+          <Text variant="titleMedium" style={{ fontWeight: '600' }}>{expense.title}</Text>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>{expense.category} • {expense.date}</Text>
+        </View>
+        <Text variant="titleMedium" style={[styles.amount, { color: theme.colors.error }]}>
+          -${expense.amount.toFixed(2)}
+        </Text>
+      </View>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
+  card: {
+    marginHorizontal: 16,
+    marginVertical: 6,
+    borderRadius: 12,
+  },
   container: {
-    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+  },
+  details: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  amount: {
+    fontWeight: 'bold',
   },
 });
 

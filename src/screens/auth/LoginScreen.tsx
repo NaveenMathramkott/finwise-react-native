@@ -10,13 +10,14 @@ import {
  TouchableOpacity,
  View
 } from 'react-native';
-import { Button, TextInput } from "react-native-paper";
+import { Button, Text as PaperText, TextInput, useTheme } from "react-native-paper";
 import Toast from 'react-native-toast-message';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../redux/slices/authSlice';
 import { COLORS } from '../../utils/theme';
 
 const LoginScreen = ({ navigation }: any) => {
+  const theme = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
@@ -61,7 +62,7 @@ const LoginScreen = ({ navigation }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
@@ -70,8 +71,8 @@ const LoginScreen = ({ navigation }: any) => {
             source={require('../../../assets/icon.png')}
             style={styles.logo}
           />
-          <Text style={styles.title}>Welcome Back!</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
+          <Text style={[styles.title, { color: theme.colors.primary }]}>Welcome Back!</Text>
+          <PaperText variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Sign in to continue</PaperText>
         </View>
 
         <View style={styles.form}>

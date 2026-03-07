@@ -10,13 +10,14 @@ import {
  TouchableOpacity,
  View
 } from 'react-native';
-import { Button, TextInput } from "react-native-paper";
+import { Button, Text as PaperText, TextInput, useTheme } from "react-native-paper";
 import Toast from 'react-native-toast-message';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../redux/slices/authSlice';
 import { COLORS } from '../../utils/theme';
 
 const RegisterScreen = ({ navigation }: any) => {
+  const theme = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
@@ -62,7 +63,7 @@ const RegisterScreen = ({ navigation }: any) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
@@ -71,8 +72,8 @@ const RegisterScreen = ({ navigation }: any) => {
             source={require('../../../assets/icon.png')}
             style={styles.logo}
           />
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Start your financial journey today</Text>
+          <Text style={[styles.title, { color: theme.colors.primary }]}>Create Account</Text>
+          <PaperText variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Start your financial journey today</PaperText>
         </View>
 
         <View style={styles.form}>
