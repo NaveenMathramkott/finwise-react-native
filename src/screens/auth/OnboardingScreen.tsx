@@ -1,23 +1,22 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
 import {
  Animated,
  FlatList,
- Image,
  StyleSheet,
- Text,
  TouchableOpacity,
  View,
  useWindowDimensions,
 } from 'react-native';
-import { Button, Text as PaperText, useTheme } from 'react-native-paper';
+import { Button, Text as PaperText, Surface, useTheme } from 'react-native-paper';
+import Reanimated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../../utils/theme';
 
 interface OnboardingSlide {
   id: string;
   title: string;
   subtitle: string;
-  image: any;
+  iconName: keyof typeof Ionicons.glyphMap;
 }
 
 const slides: OnboardingSlide[] = [
@@ -25,19 +24,19 @@ const slides: OnboardingSlide[] = [
     id: '1',
     title: 'Smart Budgeting',
     subtitle: 'Take control of your finances with ease and precision.',
-    image: require('../../../assets/icon.png'),
+    iconName: 'pie-chart',
   },
   {
     id: '2',
     title: 'Expense Tracking',
     subtitle: 'Track every penny and see exactly where your money goes.',
-    image: require('../../../assets/icon.png'),
+    iconName: 'receipt',
   },
   {
     id: '3',
     title: 'AI Insights',
     subtitle: 'Get personalized financial advice from our smart AI assistant.',
-    image: require('../../../assets/icon.png'),
+    iconName: 'sparkles',
   },
 ];
 
@@ -80,7 +79,7 @@ const OnboardingScreen = ({ navigation }: any) => {
 
             const dotWidth = scrollX.interpolate({
               inputRange,
-              outputRange: [10, 20, 10],
+              outputRange: [10, 24, 10],
               extrapolate: 'clamp',
             });
 
@@ -120,32 +119,32 @@ const OnboardingScreen = ({ navigation }: any) => {
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={[
-                  styles.btn,
+                  styles.skipBtn,
                   {
-                    borderColor: COLORS.primary,
+                    borderColor: theme.colors.primary,
                     borderWidth: 1,
                     backgroundColor: 'transparent',
                   },
                 ]}
                 onPress={skip}
               >
-                <Text
+                <PaperText
                   style={{
                     fontWeight: 'bold',
                     fontSize: 15,
-                    color: COLORS.primary,
+                    color: theme.colors.primary,
                   }}
                 >
                   SKIP
-                </Text>
+                </PaperText>
               </TouchableOpacity>
               <View style={{ width: 15 }} />
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={goToNextSlide}
-                style={[styles.btn, { backgroundColor: COLORS.primary }]}
+                style={[styles.btn, { backgroundColor: theme.colors.primary }]}
               >
-                <Text
+                <PaperText
                   style={{
                     fontWeight: 'bold',
                     fontSize: 15,
@@ -153,7 +152,7 @@ const OnboardingScreen = ({ navigation }: any) => {
                   }}
                 >
                   NEXT
-                </Text>
+                </PaperText>
               </TouchableOpacity>
             </View>
           )}
@@ -164,6 +163,8 @@ const OnboardingScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.topBg]} />
+      
       <Animated.FlatList
         ref={flatListRef}
         onMomentumScrollEnd={updateCurrentSlideIndex}
@@ -174,22 +175,36 @@ const OnboardingScreen = ({ navigation }: any) => {
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
           useNativeDriver: false,
         })}
-        renderItem={({ item }) => (
-          <View style={[styles.slide, { width }]}>
-            <Image
-              source={item.image}
-              style={styles.image}
-              resizeMode="contain"
-            />
-            <View style={styles.textContainer}>
-              <Text style={[styles.title, { color: theme.colors.primary }]}>{item.title}</Text>
-              <PaperText variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>{item.subtitle}</PaperText>
-            </View>
-          </View>
-        )}
+        renderItem={({ item, index }) => {
+            // Apply a local animated transition for when the slide matches
+            const isActive = currentSlideIndex === index;
+            return (
+                <View style={[styles.slide, { width }]}>
+                    <Reanimated.View 
+                        entering={FadeInDown.duration(600).delay(200)}
+                        style={styles.iconWrapper}
+                    >
+                        <Surface style={styles.iconSurface} elevation={4}>
+                            <Ionicons name={item.iconName} size={100} color={theme.colors.primary} />
+                        </Surface>
+                    </Reanimated.View>
+                    
+                    <Reanimated.View 
+                        entering={FadeInUp.duration(600).delay(400)}
+                        style={styles.textContainer}
+                    >
+                      <PaperText variant="displaySmall" style={[styles.title, { color: theme.colors.primary }]}>{item.title}</PaperText>
+                      <PaperText variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>{item.subtitle}</PaperText>
+                    </Reanimated.View>
+                </View>
+            );
+        }}
         keyExtractor={(item) => item.id}
       />
-      <Footer />
+      
+      <Surface style={[styles.footerSurface, { backgroundColor: theme.colors.surface }]} elevation={5}>
+          <Footer />
+      </Surface>
     </SafeAreaView>
   );
 };
@@ -197,64 +212,88 @@ const OnboardingScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+  },
+  topBg: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: '55%',
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20,
   },
   slide: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 80,
   },
-  image: {
-    height: '40%',
-    width: '80%',
+  iconWrapper: {
+      marginBottom: 60,
+  },
+  iconSurface: {
+      width: 200,
+      height: 200,
+      borderRadius: 100,
+      backgroundColor: 'white',
+      justifyContent: 'center',
+      alignItems: 'center',
   },
   textContainer: {
-    marginTop: 20,
     paddingHorizontal: 40,
     alignItems: 'center',
   },
   title: {
-    color: COLORS.primary,
-    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
+    marginBottom: 16,
   },
   subtitle: {
-    color: COLORS.textSecondary,
-    fontSize: 16,
-    marginTop: 10,
     textAlign: 'center',
-    lineHeight: 23,
+    lineHeight: 24,
+  },
+  footerSurface: {
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
+      paddingBottom: 20,
+      paddingTop: 10,
   },
   footerContainer: {
-    height: '25%',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
   },
   indicatorContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 20,
+    marginBottom: 30,
   },
   indicator: {
     height: 10,
     width: 10,
     borderRadius: 5,
-    marginHorizontal: 3,
+    marginHorizontal: 4,
   },
   buttonContainer: {
     marginBottom: 20,
   },
   btn: {
     flex: 1,
-    height: 50,
-    borderRadius: 8,
+    height: 54,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  skipBtn: {
+    width: 80,
+    height: 54,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   getStartedBtn: {
     width: '100%',
-    borderRadius: 8,
+    borderRadius: 16,
+    justifyContent: 'center',
   },
 });
 

@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
-import { FlatList } from 'react-native-gesture-handler';
-import { Chip, FAB, Searchbar, Text, useTheme } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Keyboard, StyleSheet, View } from 'react-native';
+import { FlatList, ScrollView } from 'react-native-gesture-handler';
+import { Chip, FAB, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useDispatch, useSelector } from 'react-redux';
 import SwipeableExpenseCard from '../../components/expenses/SwipeableExpenseCard';
 import { deleteExpense } from '../../redux/slices/expensesSlice';
 import { RootState } from '../../redux/store';
+import { CustomAlert } from '../../utils/AlertService';
 
 const PAGE_SIZE = 10;
 
@@ -25,11 +26,20 @@ const ExpensesScreen = ({ navigation }: any) => {
   const currentOpenSwipeable = useRef<any>(null);
 
   const closeOpenSwipeable = () => {
-    if (currentOpenSwipeable.current) {
+    if (currentOpenSwipeable.current?.close) {
       currentOpenSwipeable.current.close();
       currentOpenSwipeable.current = null;
     }
   };
+
+  const totalThisMonth = expenses.reduce((sum, exp) => {
+    const expDate = new Date(exp.date);
+    const now = new Date();
+    if (expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear()) {
+        return sum + exp.amount;
+    }
+    return sum;
+  }, 0);
 
   // Initial load, search filtering and sorting
   useEffect(() => {
@@ -67,7 +77,7 @@ const ExpensesScreen = ({ navigation }: any) => {
       exp.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Apply same sorting to filtered list before slicing for loadMore
+    // Apply same sorting
     switch (sortBy) {
       case 'latest':
         filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -86,7 +96,6 @@ const ExpensesScreen = ({ navigation }: any) => {
     if (displayedExpenses.length >= filtered.length) return;
 
     setLoadingMore(true);
-    // Simulate API delay
     setTimeout(() => {
       const nextPage = page + 1;
       const nextExpenses = filtered.slice(0, nextPage * PAGE_SIZE);
@@ -98,7 +107,12 @@ const ExpensesScreen = ({ navigation }: any) => {
 
   const handleDelete = (id: string) => {
     closeOpenSwipeable();
-    dispatch(deleteExpense(id));
+    CustomAlert.alert(
+      'Delete Expense',
+      'EXPENSE',
+      'Are you sure you want to delete this expense permanent?',
+      () => dispatch(deleteExpense(id))
+    );
   };
 
   const handleEdit = (expense: any) => {
@@ -108,7 +122,7 @@ const ExpensesScreen = ({ navigation }: any) => {
 
   const onSwipeableWillOpen = (ref: any) => {
     if (currentOpenSwipeable.current && currentOpenSwipeable.current !== ref) {
-      currentOpenSwipeable.current.close();
+      currentOpenSwipeable.current.close?.();
     }
     currentOpenSwipeable.current = ref;
   };
@@ -123,12 +137,26 @@ const ExpensesScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={{ flex: 1 }}>
-        <View style={styles.header}>
-          <Text variant="headlineMedium" style={styles.screenTitle}>Expenses</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Top Primary Background */}
+      <View style={[styles.topBg, { backgroundColor: theme.colors.primary }]} />
+
+      <Animated.View entering={FadeInUp.duration(600)} style={styles.headerWrapper}>
+        <Surface style={[styles.headerCard, { backgroundColor: theme.colors.surface }]} elevation={4}>
+          <View style={styles.titleRow}>
+            <View>
+                <Text variant="headlineMedium" style={styles.screenTitle}>My Expenses</Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Monthly Spending: <Text variant="labelLarge" style={{ color: theme.colors.primary }}>${totalThisMonth.toFixed(2)}</Text>
+                </Text>
+            </View>
+            <View style={[styles.iconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
+                <Ionicons name="receipt-outline" size={24} color={theme.colors.primary} />
+            </View>
+          </View>
+
           <Searchbar
-            placeholder="Search expenses..."
+            placeholder="Search transactions..."
             onChangeText={(text) => {
               closeOpenSwipeable();
               setSearchQuery(text);
@@ -138,81 +166,59 @@ const ExpensesScreen = ({ navigation }: any) => {
             style={styles.searchBar}
             elevation={0}
           />
+
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false} 
-            style={styles.filterRow}
             contentContainerStyle={styles.filterRowContent}
           >
-            <Chip 
-              selected={sortBy === 'latest'} 
-              onPress={() => {
-                closeOpenSwipeable();
-                setSortBy('latest');
-              }}
-              style={styles.chip}
-              showSelectedOverlay
-            >
-              Latest
-            </Chip>
-            <Chip 
-              selected={sortBy === 'highest'} 
-              onPress={() => {
-                closeOpenSwipeable();
-                setSortBy('highest');
-              }}
-              style={styles.chip}
-              showSelectedOverlay
-            >
-              Highest
-            </Chip>
-            <Chip 
-              selected={sortBy === 'lowest'} 
-              onPress={() => {
-                closeOpenSwipeable();
-                setSortBy('lowest');
-              }}
-              style={styles.chip}
-              showSelectedOverlay
-            >
-              Lowest
-            </Chip>
-            <Chip 
-              selected={sortBy === 'oldest'} 
-              onPress={() => {
-                closeOpenSwipeable();
-                setSortBy('oldest');
-              }}
-              style={styles.chip}
-              showSelectedOverlay
-            >
-              Oldest
-            </Chip>
+            {[
+                { label: 'Latest', value: 'latest', icon: 'time-outline' },
+                { label: 'Highest', value: 'highest', icon: 'trending-up-outline' },
+                { label: 'Lowest', value: 'lowest', icon: 'trending-down-outline' },
+                { label: 'Oldest', value: 'oldest', icon: 'calendar-outline' }
+            ].map((item) => (
+                <Chip 
+                  key={item.value}
+                  selected={sortBy === item.value} 
+                  onPress={() => {
+                    closeOpenSwipeable();
+                    setSortBy(item.value);
+                  }}
+                  style={[styles.chip, sortBy === item.value && { backgroundColor: theme.colors.primary }]}
+                  textStyle={sortBy === item.value && { color: 'white' }}
+                  showSelectedOverlay
+                  icon={({ color }) => (
+                    <Ionicons name={item.icon as any} size={14} color={sortBy === item.value ? 'white' : color} />
+                  )}
+                >
+                  {item.label}
+                </Chip>
+            ))}
           </ScrollView>
-        </View>
+        </Surface>
+      </Animated.View>
 
+      <Animated.View entering={FadeInDown.delay(200).duration(600)} style={{ flex: 1 }}>
         <FlatList
           data={displayedExpenses}
           keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
           onScrollBeginDrag={() => {
             closeOpenSwipeable();
             Keyboard.dismiss();
           }}
           onTouchStart={closeOpenSwipeable}
-          renderItem={({ item }) => {
-            let swipeContext: any = null;
-            return (
-              <SwipeableExpenseCard 
-                ref={(ref) => { swipeContext = ref; }}
-                expense={item} 
-                onDelete={handleDelete} 
-                onEdit={handleEdit} 
-                onSwipeableWillOpen={() => {
-                  if (swipeContext) onSwipeableWillOpen(swipeContext);
-                }}
-              />
-            );
-          }}
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInDown.delay(300 + index * 50)}>
+                <SwipeableExpenseCard 
+                  expense={item} 
+                  onDelete={handleDelete} 
+                  onEdit={handleEdit} 
+                  onSwipeableWillOpen={(ref) => onSwipeableWillOpen(ref)}
+                />
+            </Animated.View>
+          )}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
@@ -221,15 +227,16 @@ const ExpensesScreen = ({ navigation }: any) => {
             <View style={styles.emptyState}>
               <Ionicons name="search-outline" size={64} color={theme.colors.onSurfaceVariant} />
               <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, marginTop: 16 }}>
-                No expenses found
+                No records found
               </Text>
             </View>
           }
         />
-      </View>
+      </Animated.View>
 
       <FAB
         icon="plus"
+        // label=""
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         color="white"
         onPress={() => {
@@ -237,7 +244,7 @@ const ExpensesScreen = ({ navigation }: any) => {
           navigation.navigate('AddExpense');
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -245,50 +252,70 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    padding: 16,
-    paddingBottom: 8,
+  topBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 180,
+  },
+  headerWrapper: {
+    marginTop: 60,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  headerCard: {
+    borderRadius: 32,
+    padding: 20,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   screenTitle: {
     fontWeight: 'bold',
-    marginBottom: 16,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchBar: {
-    borderRadius: 12,
-    backgroundColor: 'white',
-    elevation: 2,
-    marginBottom: 12,
-  },
-  filterRow: {
-    flexGrow: 0,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    marginBottom: 16,
+    height: 48,
   },
   filterRowContent: {
-    paddingRight: 16,
     gap: 8,
+    paddingRight: 10,
   },
   chip: {
-    borderRadius: 20,
+    borderRadius: 12,
   },
   listContent: {
     paddingBottom: 100,
-    paddingTop: 8,
   },
   loaderFooter: {
     paddingVertical: 20,
     alignItems: 'center',
   },
   emptyState: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 100,
+    marginTop: 60,
+    opacity: 0.5,
   },
   fab: {
     position: 'absolute',
     margin: 16,
-    right: 0,
-    bottom: 0,
-    borderRadius: 28,
+    right: 8,
+    bottom: 8,
+    borderRadius: 20,
   },
 });
 

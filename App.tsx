@@ -4,6 +4,7 @@ import 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 import { Provider as StoreProvider, useSelector } from 'react-redux';
+import CustomAlertComponent from './src/components/common/CustomAlert';
 import Navigation from './src/navigation';
 import { RootState, store } from './src/redux/store';
 import { darkTheme, theme as lightTheme } from './src/utils/theme';
@@ -22,6 +23,7 @@ const MainApp = () => {
           backgroundColor={theme.colors.background}
         />
         <Navigation />
+        <CustomAlertComponent />
         <Toast />
       </PaperProvider>
     </GestureHandlerRootView>

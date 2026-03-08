@@ -1,6 +1,24 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-const initialState = {
+interface Message {
+  id: string;
+  question: string;
+  answer?: string;
+  sender: "user" | "ai";
+  timestamp: string;
+  error?: string;
+}
+
+interface AIState {
+  messages: Message[];
+  conversations: any[];
+  currentConversationId: string | null;
+  loading: boolean;
+  error: string | null;
+  suggestions: string[];
+}
+
+const initialState: AIState = {
   messages: [],
   conversations: [],
   currentConversationId: null,
@@ -14,47 +32,109 @@ const initialState = {
   ],
 };
 
+// Mocked AI API call
+const mockAiResponse = async (question: string): Promise<string> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const responses: { [key: string]: string } = {
+        "how much did i spend on food":
+          "You've spent approximately $450 on food this month, which is 15% more than last month.",
+        "show me my largest expenses":
+          "Your largest expenses this month are: Rent ($1,200), Groceries ($350), and Utilities ($150).",
+        "give me saving tips":
+          "Consider setting a budget for dining out and review your monthly subscriptions to identify any unused services.",
+        "compare this month with last month":
+          "Your total spending is down by 5% compared to last month. Great job!",
+      };
+      const key = question.toLowerCase();
+      resolve(
+        responses[key] ||
+          "I'm sorry, I don't have that information right now. I'm still learning!",
+      );
+    }, 1500);
+  });
+};
+
+export const sendMessage = createAsyncThunk(
+  "ai/sendMessage",
+  async (
+    { question, userId }: { question: string; userId: string },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await mockAiResponse(question);
+      return { question, answer: response };
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Failed to get AI response");
+    }
+  },
+);
+
 const aiSlice = createSlice({
   name: "ai",
   initialState,
   reducers: {
-    addMessage: (state, action) => {
-      state.messages.push({
-        id: Date.now().toString(),
-        timestamp: new Date().toISOString(),
-        ...action.payload,
-      });
-    },
-    setMessages: (state, action) => {
-      state.messages = action.payload;
-    },
-    setLoading: (state, action) => {
-      state.loading = action.payload;
-    },
-    setError: (state, action) => {
-      state.error = action.payload;
+    addMessage: (state, action: PayloadAction<Message>) => {
+      state.messages.push(action.payload);
     },
     clearChat: (state) => {
       state.messages = [];
       state.error = null;
     },
-    addConversation: (state, action) => {
-      state.conversations.unshift(action.payload);
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
     },
-    setCurrentConversation: (state, action) => {
-      state.currentConversationId = action.payload;
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(sendMessage.pending, (state, action) => {
+        state.loading = true;
+        state.error = null;
+        // Add a temporary user message
+        state.messages.push({
+          id: action.meta.requestId,
+          question: action.meta.arg.question,
+          sender: "user",
+          timestamp: new Date().toISOString(),
+        });
+      })
+      .addCase(sendMessage.fulfilled, (state, action) => {
+        state.loading = false;
+        // Find the placeholder and add the answer
+        const messageIndex = state.messages.findIndex(
+          (m) => m.id === action.meta.requestId,
+        );
+        if (messageIndex !== -1) {
+          state.messages[messageIndex].answer = action.payload.answer;
+          state.messages[messageIndex].sender = "ai"; // Mark as AI response
+        } else {
+          // Fallback if for some reason the user message wasn't added or found
+          state.messages.push({
+            id: Date.now().toString(),
+            question: action.payload.question,
+            answer: action.payload.answer,
+            sender: "ai",
+            timestamp: new Date().toISOString(),
+          });
+        }
+      })
+      .addCase(sendMessage.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        // If the request failed, update the user message to show an error or remove it
+        const messageIndex = state.messages.findIndex(
+          (m) => m.id === action.meta.requestId,
+        );
+        if (messageIndex !== -1) {
+          state.messages[messageIndex].error = action.payload as string;
+          state.messages[messageIndex].sender = "ai"; // Mark as AI response with error
+        }
+      });
   },
 });
 
-export const {
-  addMessage,
-  setMessages,
-  setLoading,
-  setError,
-  clearChat,
-  addConversation,
-  setCurrentConversation,
-} = aiSlice.actions;
+export const { addMessage, clearChat, setLoading } = aiSlice.actions;
 
 export default aiSlice.reducer;
+export type { AIState, Message };
+

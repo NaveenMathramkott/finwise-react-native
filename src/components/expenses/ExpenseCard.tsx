@@ -12,6 +12,7 @@ interface ExpenseCardProps {
     date: string;
     image?: string;
   };
+  paddingHoz?: number;
 }
 
 const categoryIcons: { [key: string]: string } = {
@@ -25,12 +26,12 @@ const categoryIcons: { [key: string]: string } = {
   Other: 'ellipsis-horizontal',
 };
 
-const ExpenseCard = ({ expense }: ExpenseCardProps) => {
+const ExpenseCard = ({ expense, paddingHoz=22 }: ExpenseCardProps) => {
   const theme = useTheme();
   const iconName = categoryIcons[expense.category] || 'receipt';
 
   return (
-    <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={1}>
+    <Card style={[styles.card, { backgroundColor: theme.colors.surface, marginHorizontal: paddingHoz }]} elevation={1}>
       <View style={styles.container}>
         {expense.image ? (
           <Avatar.Image
@@ -50,7 +51,7 @@ const ExpenseCard = ({ expense }: ExpenseCardProps) => {
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>{expense.category} • {expense.date}</Text>
         </View>
         <Text variant="titleMedium" style={[styles.amount, { color: theme.colors.error }]}>
-          -${expense.amount.toFixed(2)}
+          AED {expense.amount.toFixed(2)}
         </Text>
       </View>
     </Card>
@@ -58,8 +59,8 @@ const ExpenseCard = ({ expense }: ExpenseCardProps) => {
 };
 
 const styles = StyleSheet.create({
+ 
   card: {
-    marginHorizontal: 16,
     marginVertical: 6,
     borderRadius: 12,
   },

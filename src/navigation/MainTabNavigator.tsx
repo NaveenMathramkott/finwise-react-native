@@ -4,14 +4,15 @@ import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import AddExpenseScreen from '../screens/expense/AddExpenseScreen';
 import AIAssistantScreen from '../screens/main/AIAssistantScreen';
-import BudgetScreen from '../screens/main/BudgetScreen';
 import DashboardScreen from '../screens/main/DashboardScreen';
 import ExpensesScreen from '../screens/main/ExpensesScreen';
+import ReportsScreen from '../screens/main/ReportsScreen';
+import AboutScreen from '../screens/profile/AboutScreen';
 import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
-import SettingsScreen from '../screens/profile/SettingsScreen';
-import ReportsScreen from '../screens/reports/ReportsScreen';
+import SupportScreen from '../screens/profile/SupportScreen';
+import BudgetScreen from '../screens/reports/BudgetScreen';
 import { COLORS } from '../utils/theme';
 import {
  MainTabParamList
@@ -31,17 +32,18 @@ const ExpensesStack = () => (
 // Profile Stack
 const ProfileStack = () => (
   <Stack.Navigator screenOptions={{headerShown:false}}>
-    <Stack.Screen name="Profile" component={ProfileScreen} />
+    <Stack.Screen name="CurrentProfile" component={ProfileScreen} />
     <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-    <Stack.Screen name="Settings" component={SettingsScreen} />
+    <Stack.Screen name="Support" component={SupportScreen} />
+    <Stack.Screen name="About" component={AboutScreen} />
   </Stack.Navigator>
 );
 
 // Reports Stack
 const ReportsStack = () => (
   <Stack.Navigator screenOptions={{headerShown:false}}>
-    <Stack.Screen name="Reports" component={ReportsScreen} />
+    <Stack.Screen name="CurrentReports" component={ReportsScreen} />
     <Stack.Screen name="Budget" component={BudgetScreen} />
   </Stack.Navigator>
 );
@@ -58,9 +60,9 @@ const MainTabNavigator = () => {
             iconName = focused ? 'list' : 'list-outline';
           } else if (route.name === 'AI Assistant') {
             iconName = focused ? 'chatbubble' : 'chatbubble-outline';
-          } else if (route.name === 'MainReports') {
+          } else if (route.name === 'Reports') {
             iconName = focused ? 'stats-chart' : 'stats-chart-outline';
-          } else if (route.name === 'MainProfile') {
+          } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           } else {
             iconName = 'help-circle-outline';
@@ -75,8 +77,8 @@ const MainTabNavigator = () => {
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Expenses" component={ExpensesStack} />
       <Tab.Screen name="AI Assistant" component={AIAssistantScreen} />
-      <Tab.Screen name="MainReports" component={ReportsStack} />
-      <Tab.Screen name="MainProfile" component={ProfileStack} />
+      <Tab.Screen name="Reports" component={ReportsStack} />
+      <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>
   );
 };

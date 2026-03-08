@@ -1,20 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import {
- Image,
- KeyboardAvoidingView,
- Platform,
- StyleSheet,
- Text,
- TouchableOpacity,
- View
-} from 'react-native';
-import { Button, Text as PaperText, TextInput, useTheme } from "react-native-paper";
+import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
+import { Button, HelperText, Text as PaperText, Surface, TextInput, useTheme } from "react-native-paper";
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../redux/slices/authSlice';
-import { COLORS } from '../../utils/theme';
 
 const RegisterScreen = ({ navigation }: any) => {
   const theme = useTheme();
@@ -37,228 +30,228 @@ const RegisterScreen = ({ navigation }: any) => {
   const onSubmit = async (data: any) => {
     setLoading(true);
     try {
-      // Mock registration
-      dispatch(
-        setUser({
-          id: Date.now().toString(),
-          email: data.email,
-          name: data.name,
-        })
-      );
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Account created successfully!',
-      });
+      setTimeout(() => {
+        dispatch(
+          setUser({
+            id: Date.now().toString(),
+            email: data.email,
+            name: data.name,
+          })
+        );
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Account created successfully!',
+        });
+        setLoading(false);
+      }, 1000);
     } catch (error) {
       Toast.show({
         type: 'error',
         text1: 'Error',
         text2: 'Registration failed',
       });
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Image
-            source={require('../../../assets/icon.png')}
-            style={styles.logo}
-          />
-          <Text style={[styles.title, { color: theme.colors.primary }]}>Create Account</Text>
-          <PaperText variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Start your financial journey today</PaperText>
-        </View>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.topBg, { backgroundColor: theme.colors.primary }]} />
 
-        <View style={styles.form}>
-          <Controller
-            control={control}
-            name="name"
-            rules={{
-              required: 'Full name is required',
-              minLength: { value: 3, message: 'Name must be at least 3 characters' },
-            }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                label="Full Name"
-                mode="outlined"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                placeholder="Enter your full name"
-                autoCapitalize="words"
-                error={!!errors.name}
-                left={
-                  <TextInput.Icon
-                    icon={() => <Ionicons name="person-outline" size={22} color={COLORS.primary} />}
-                  />
-                }
-                style={styles.input}
-              />
-            )}
-          />
-          {errors.name && <Text style={styles.errorText}>{errors.name.message}</Text>}
+      <Animated.View entering={FadeInDown.duration(800).delay(100)} style={styles.header}>
+        <Surface style={styles.logoContainer} elevation={4}>
+           <Ionicons name="rocket" size={50} color={theme.colors.primary} />
+        </Surface>
+        <PaperText variant="displaySmall" style={[styles.title, { color: 'white' }]}>Create Account</PaperText>
+        <PaperText variant="bodyLarge" style={{ color: 'rgba(255,255,255,0.8)' }}>Start your financial journey today</PaperText>
+      </Animated.View>
 
-          <Controller
-            control={control}
-            name="email"
-            rules={{
-              required: 'Email is required',
-              pattern: {
-                value: /\S+@\S+\.\S+/,
-                message: 'Invalid email address',
-              },
-            }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                label="Email"
-                mode="outlined"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                placeholder="Enter your email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                error={!!errors.email}
-                left={
-                  <TextInput.Icon
-                    icon={() => <Ionicons name="mail-outline" size={22} color={COLORS.primary} />}
-                  />
-                }
-                style={styles.input}
-              />
-            )}
-          />
-          {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
-
-          <Controller
-            control={control}
-            name="password"
-            rules={{
-              required: 'Password is required',
-              minLength: {
-                value: 6,
-                message: 'Password must be at least 6 characters',
-              },
-            }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                label="Password"
-                mode="outlined"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                placeholder="Create a password"
-                secureTextEntry={!showPassword}
-                error={!!errors.password}
-                left={
-                  <TextInput.Icon
-                    icon={() => <Ionicons name="lock-closed-outline" size={22} color={COLORS.primary} />}
-                  />
-                }
-                right={
-                  <TextInput.Icon
-                    icon={() => (
-                      <Ionicons
-                        name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                        size={22}
-                        color={COLORS.primary}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          <Animated.View entering={FadeInUp.duration(800).delay(300)}>
+              <Surface style={[styles.formCard, { backgroundColor: theme.colors.surface }]} elevation={4}>
+                <View style={styles.formContent}>
+                  
+                  <Controller
+                    control={control}
+                    name="name"
+                    rules={{
+                      required: 'Full name is required',
+                      minLength: { value: 3, message: 'Name must be at least 3 characters' },
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextInput
+                        label="Full Name"
+                        mode="outlined"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                        placeholder="Enter your full name"
+                        autoCapitalize="words"
+                        error={!!errors.name}
+                        outlineStyle={{ borderRadius: 16 }}
+                        left={<TextInput.Icon icon={() => <Ionicons name="person-outline" size={22} color={theme.colors.primary} />} />}
+                        style={styles.input}
                       />
                     )}
-                    onPress={() => setShowPassword(!showPassword)}
                   />
-                }
-                style={styles.input}
-              />
-            )}
-          />
-          {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
+                  {errors.name && <HelperText type="error" visible={true}>{errors.name.message as string}</HelperText>}
 
-          <Button
-            onPress={handleSubmit(onSubmit)}
-            mode="contained"
-            loading={loading}
-            style={styles.registerButton}
-          >
-            Sign Up
-          </Button>
-        </View>
+                  <Controller
+                    control={control}
+                    name="email"
+                    rules={{
+                      required: 'Email is required',
+                      pattern: {
+                        value: /\S+@\S+\.\S+/,
+                        message: 'Invalid email address',
+                      },
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextInput
+                        label="Email"
+                        mode="outlined"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                        placeholder="Enter your email"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        error={!!errors.email}
+                        outlineStyle={{ borderRadius: 16 }}
+                        left={<TextInput.Icon icon={() => <Ionicons name="mail-outline" size={22} color={theme.colors.primary} />} />}
+                        style={styles.input}
+                      />
+                    )}
+                  />
+                  {errors.email && <HelperText type="error" visible={true}>{errors.email.message as string}</HelperText>}
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.signInText}>Sign In</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+                  <Controller
+                    control={control}
+                    name="password"
+                    rules={{
+                      required: 'Password is required',
+                      minLength: {
+                        value: 6,
+                        message: 'Password must be at least 6 characters',
+                      },
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextInput
+                        label="Password"
+                        mode="outlined"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                        placeholder="Create a password"
+                        secureTextEntry={!showPassword}
+                        error={!!errors.password}
+                        outlineStyle={{ borderRadius: 16 }}
+                        left={<TextInput.Icon icon={() => <Ionicons name="lock-closed-outline" size={22} color={theme.colors.primary} />} />}
+                        right={
+                          <TextInput.Icon
+                            icon={() => <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={22} color={theme.colors.primary} />}
+                            onPress={() => setShowPassword(!showPassword)}
+                          />
+                        }
+                        style={styles.input}
+                      />
+                    )}
+                  />
+                  {errors.password && <HelperText type="error" visible={true}>{errors.password.message as string}</HelperText>}
+
+                  <Button
+                    onPress={handleSubmit(onSubmit)}
+                    mode="contained"
+                    loading={loading}
+                    disabled={loading}
+                    style={styles.registerButton}
+                    contentStyle={{ paddingVertical: 8 }}
+                  >
+                    Sign Up
+                  </Button>
+                  
+                  <View style={styles.footer}>
+                    <PaperText style={{ color: theme.colors.onSurfaceVariant }}>Already have an account? </PaperText>
+                    <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                      <PaperText style={[styles.signInText, { color: theme.colors.primary }]}>Sign In</PaperText>
+                    </TouchableOpacity>
+                  </View>
+
+                </View>
+              </Surface>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
-  content: {
-    flex: 1,
+  topBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '40%',
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    justifyContent: 'center',
+    paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    paddingTop: 80,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
   },
-  logo: {
+  logoContainer: {
     width: 80,
     height: 80,
-    marginBottom: 16,
+    borderRadius: 24,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   title: {
-    fontSize: 28,
     fontWeight: 'bold',
-    color: COLORS.primary,
     marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
+  formCard: {
+    borderRadius: 32,
+    overflow: 'hidden',
   },
-  form: {
-    marginBottom: 32,
+  formContent: {
+    padding: 24,
   },
   input: {
-    marginTop: 8,
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: 12,
-    marginLeft: 4,
-    // marginTop: 4,
+    marginBottom: 4,
+    backgroundColor: 'transparent',
   },
   registerButton: {
-    marginTop: 16,
+    borderRadius: 16,
+    marginBottom: 24,
+    marginTop: 20,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  footerText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-  },
   signInText: {
-    color: COLORS.primary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });
 

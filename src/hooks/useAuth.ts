@@ -1,5 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
-import { logout, setAuth, User } from "../redux/slices/authSlice";
+import type { User } from "../redux/slices/authSlice";
+import { logout, setUser } from "../redux/slices/authSlice";
 import { AppDispatch, RootState } from "../redux/store";
 
 export const useAuth = () => {
@@ -10,7 +11,7 @@ export const useAuth = () => {
 
   const loginUser = (userData: User) => {
     // Simulate API call
-    dispatch(setAuth({ user: userData, token: "fake-jwt-token" }));
+    dispatch(setUser(userData));
   };
 
   const logoutUser = () => {

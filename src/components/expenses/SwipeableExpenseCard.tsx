@@ -15,7 +15,7 @@ interface SwipeableExpenseCardProps {
   expense: any;
   onDelete: (id: string) => void;
   onEdit: (expense: any) => void;
-  onSwipeableWillOpen: () => void;
+  onSwipeableWillOpen: (ref: any) => void;
 }
 
 const RightActions = ({ 
@@ -68,9 +68,7 @@ const SwipeableExpenseCard = React.forwardRef<any, SwipeableExpenseCardProps>(
     const theme = useTheme();
     const swipeableRef = React.useRef<any>(null);
 
-    React.useImperativeHandle(ref, () => ({
-      close: () => swipeableRef.current?.close(),
-    }));
+    React.useImperativeHandle(ref, () => swipeableRef.current);
 
     const renderRightActions = (
       _progress: SharedValue<number>,
@@ -89,9 +87,8 @@ const SwipeableExpenseCard = React.forwardRef<any, SwipeableExpenseCardProps>(
       <Swipeable
         ref={swipeableRef}
         renderRightActions={renderRightActions}
-        onSwipeableWillOpen={onSwipeableWillOpen}
+        onSwipeableWillOpen={() => onSwipeableWillOpen(swipeableRef.current)}
         friction={2}
-        enableTrackpadTwoFingerGesture
         rightThreshold={40}
         activeOffsetX={[-20, 20]}
         failOffsetY={[-20, 20]}

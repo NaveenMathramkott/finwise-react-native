@@ -28,8 +28,8 @@ export type MainTabParamList = {
   Dashboard: undefined;
   Expenses: NavigatorScreenParams<ExpensesStackParamList>;
   "AI Assistant": undefined;
-  MainReports: NavigatorScreenParams<ReportsStackParamList>;
-  MainProfile: NavigatorScreenParams<ProfileStackParamList>;
+  Reports: NavigatorScreenParams<ReportsStackParamList>;
+  Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
 export type RootStackParamList = {
