@@ -24,8 +24,8 @@ import {
 } from 'react-native-paper';
 import { DatePickerInput, en, registerTranslation } from 'react-native-paper-dates';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import Toast from 'react-native-toast-message';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSnackbar } from '../../hooks/useSnackbar';
 import { addExpense, updateExpense } from '../../redux/slices/expensesSlice';
 import { RootState } from '../../redux/store';
 
@@ -47,6 +47,7 @@ const AddExpenseScreen = ({ navigation, route }: any) => {
   const [image, setImage] = useState<string | null>(editingExpense?.image || null);
   const [categoryMenuVisible, setCategoryMenuVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { showSnackbar } = useSnackbar();
 
   const {
     control,
@@ -68,7 +69,7 @@ const AddExpenseScreen = ({ navigation, route }: any) => {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Toast.show({ type: 'error', text1: 'Permission denied', text2: 'We need gallery access' });
+      showSnackbar('Permission denied - We need gallery access', 'error');
       return;
     }
 
@@ -86,7 +87,7 @@ const AddExpenseScreen = ({ navigation, route }: any) => {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Toast.show({ type: 'error', text1: 'Permission denied', text2: 'We need camera access' });
+      showSnackbar('Permission denied - We need camera access', 'error');
       return;
     }
 
@@ -114,14 +115,14 @@ const AddExpenseScreen = ({ navigation, route }: any) => {
 
       if (editingExpense) {
         dispatch(updateExpense(expenseData));
-        Toast.show({ type: 'success', text1: 'Success', text2: 'Expense updated' });
+        showSnackbar('Success - Expense updated', 'success');
       } else {
         dispatch(addExpense(expenseData));
-        Toast.show({ type: 'success', text1: 'Success', text2: 'Expense added' });
+        showSnackbar('Success - Expense added', 'success');
       }
       navigation.goBack();
     } catch (error) {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to save expense' });
+      showSnackbar('Error - Failed to save expense', 'error');
     } finally {
       setLoading(false);
     }

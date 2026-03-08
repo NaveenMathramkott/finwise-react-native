@@ -5,11 +5,12 @@ import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } fr
 import { ScrollView } from 'react-native-gesture-handler';
 import { Button, HelperText, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import Toast from 'react-native-toast-message';
+import { useSnackbar } from '../../hooks/useSnackbar';
 
 const SupportScreen = ({ navigation }: any) => {
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
+  const { showSnackbar } = useSnackbar();
 
   const {
     control,
@@ -26,11 +27,7 @@ const SupportScreen = ({ navigation }: any) => {
   const onSubmit = (data: any) => {
     setLoading(true);
     setTimeout(() => {
-      Toast.show({
-        type: 'success',
-        text1: 'Message Sent',
-        text2: 'Our support team will get back to you soon.',
-      });
+      showSnackbar('Message Sent - Our support team will get back to you soon.', 'success');
       setLoading(false);
       reset();
       navigation.goBack();

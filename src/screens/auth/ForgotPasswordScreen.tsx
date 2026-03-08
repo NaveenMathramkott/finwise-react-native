@@ -5,11 +5,12 @@ import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } fr
 import { ScrollView } from 'react-native-gesture-handler';
 import { Button, HelperText, Text as PaperText, Surface, TextInput, useTheme } from "react-native-paper";
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import Toast from 'react-native-toast-message';
+import { useSnackbar } from '../../hooks/useSnackbar';
 
 const ForgotPasswordScreen = ({ navigation }: any) => {
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
+  const { showSnackbar } = useSnackbar();
 
   const {
     control,
@@ -25,20 +26,12 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
     setLoading(true);
     try {
       setTimeout(() => {
-        Toast.show({
-          type: 'success',
-          text1: 'Email Sent',
-          text2: 'Instructions to reset your password have been sent.',
-        });
+        showSnackbar('Email Sent - Instructions to reset your password have been sent.', 'success');
         setLoading(false);
         navigation.navigate('Login');
       }, 1500);
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to send reset email',
-      });
+      showSnackbar('Error - Failed to send reset email', 'error');
       setLoading(false);
     }
   };

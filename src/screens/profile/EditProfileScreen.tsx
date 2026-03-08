@@ -5,8 +5,8 @@ import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } fr
 import { ScrollView } from 'react-native-gesture-handler';
 import { Avatar, Button, HelperText, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import Toast from 'react-native-toast-message';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSnackbar } from '../../hooks/useSnackbar';
 import { setUser } from '../../redux/slices/authSlice';
 import { RootState } from '../../redux/store';
 
@@ -15,6 +15,7 @@ const EditProfileScreen = ({ navigation }: any) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
   const [loading, setLoading] = useState(false);
+  const { showSnackbar } = useSnackbar();
 
   const {
     control,
@@ -40,11 +41,7 @@ const EditProfileScreen = ({ navigation }: any) => {
           email: data.email,
         })
       );
-      Toast.show({
-        type: 'success',
-        text1: 'Profile Updated',
-        text2: 'Your information has been saved successfully.',
-      });
+      showSnackbar('Profile Updated - Your information has been saved successfully.', 'success');
       setLoading(false);
       navigation.goBack();
     }, 1000);

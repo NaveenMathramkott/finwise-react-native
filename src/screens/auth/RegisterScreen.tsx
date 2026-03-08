@@ -5,8 +5,8 @@ import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } fr
 import { ScrollView } from 'react-native-gesture-handler';
 import { Button, HelperText, Text as PaperText, Surface, TextInput, useTheme } from "react-native-paper";
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import Toast from 'react-native-toast-message';
 import { useDispatch } from 'react-redux';
+import { useSnackbar } from '../../hooks/useSnackbar';
 import { setUser } from '../../redux/slices/authSlice';
 
 const RegisterScreen = ({ navigation }: any) => {
@@ -14,6 +14,7 @@ const RegisterScreen = ({ navigation }: any) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
+  const { showSnackbar } = useSnackbar();
 
   const {
     control,
@@ -38,19 +39,11 @@ const RegisterScreen = ({ navigation }: any) => {
             name: data.name,
           })
         );
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Account created successfully!',
-        });
+        showSnackbar('Success - Account created successfully!', 'success');
         setLoading(false);
       }, 1000);
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Registration failed',
-      });
+      showSnackbar('Error - Registration failed', 'error');
       setLoading(false);
     }
   };

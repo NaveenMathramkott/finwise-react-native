@@ -5,7 +5,7 @@ import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } fr
 import { ScrollView } from 'react-native-gesture-handler';
 import { Button, HelperText, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import Toast from 'react-native-toast-message';
+import { useSnackbar } from '../../hooks/useSnackbar';
 
 const ChangePasswordScreen = ({ navigation }: any) => {
   const theme = useTheme();
@@ -13,6 +13,7 @@ const ChangePasswordScreen = ({ navigation }: any) => {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { showSnackbar } = useSnackbar();
 
   const {
     control,
@@ -32,11 +33,7 @@ const ChangePasswordScreen = ({ navigation }: any) => {
   const onSubmit = (data: any) => {
     setLoading(true);
     setTimeout(() => {
-      Toast.show({
-        type: 'success',
-        text1: 'Password Updated',
-        text2: 'Your password has been changed successfully.',
-      });
+      showSnackbar('Password Updated - Your password has been changed successfully.', 'success');
       setLoading(false);
       navigation.goBack();
     }, 1000);

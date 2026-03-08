@@ -4,8 +4,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, HelperText, Text as PaperText, Surface, TextInput, useTheme } from "react-native-paper";
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import Toast from 'react-native-toast-message';
 import { useDispatch } from 'react-redux';
+import { useSnackbar } from '../../hooks/useSnackbar';
 import { setUser } from '../../redux/slices/authSlice';
 
 const LoginScreen = ({ navigation }: any) => {
@@ -13,6 +13,7 @@ const LoginScreen = ({ navigation }: any) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
+  const { showSnackbar } = useSnackbar();
 
   const {
     control,
@@ -36,19 +37,11 @@ const LoginScreen = ({ navigation }: any) => {
             name: 'John Doe',
           })
         );
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Welcome back!',
-        });
+        showSnackbar('Success - Welcome back!', 'success');
         setLoading(false);
       }, 1000);
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Login error',
-      });
+      showSnackbar('Error - Login error', 'error');
       setLoading(false);
     }
   };
