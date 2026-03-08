@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import AddExpenseScreen from '../screens/expense/AddExpenseScreen';
+import BudgetScreen from '../screens/expense/BudgetScreen';
 import AIAssistantScreen from '../screens/main/AIAssistantScreen';
 import DashboardScreen from '../screens/main/DashboardScreen';
 import ExpensesScreen from '../screens/main/ExpensesScreen';
@@ -12,7 +13,6 @@ import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import SupportScreen from '../screens/profile/SupportScreen';
-import BudgetScreen from '../screens/reports/BudgetScreen';
 import { COLORS } from '../utils/theme';
 import {
  MainTabParamList
@@ -26,6 +26,7 @@ const ExpensesStack = () => (
   <Stack.Navigator screenOptions={{headerShown:false}}>
     <Stack.Screen name="ExpensesList" component={ExpensesScreen} options={{ title: 'Expenses' }} />
     <Stack.Screen name="AddExpense" component={AddExpenseScreen} options={{ title: 'Add Expense' }} />
+    <Stack.Screen name="Budget" component={BudgetScreen} />
   </Stack.Navigator>
 );
 

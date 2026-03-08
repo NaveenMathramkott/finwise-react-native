@@ -23,9 +23,19 @@ const budgetSlice = createSlice({
     setBudgets: (state, action: PayloadAction<Budget[]>) => {
       state.budgets = action.payload;
     },
+    setBudget: (state, action: PayloadAction<Budget>) => {
+      const existingIndex = state.budgets.findIndex(
+        (b) => b.category === action.payload.category,
+      );
+      if (existingIndex >= 0) {
+        state.budgets[existingIndex] = action.payload;
+      } else {
+        state.budgets.push(action.payload);
+      }
+    },
   },
 });
 
-export const { setBudgets } = budgetSlice.actions;
+export const { setBudgets, setBudget } = budgetSlice.actions;
 export default budgetSlice.reducer;
 export type { Budget, BudgetState };

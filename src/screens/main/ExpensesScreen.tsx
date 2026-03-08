@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Keyboard, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { Chip, FAB, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -147,12 +147,18 @@ const ExpensesScreen = ({ navigation }: any) => {
             <View>
                 <Text variant="headlineMedium" style={styles.screenTitle}>My Expenses</Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Monthly Spending: <Text variant="labelLarge" style={{ color: theme.colors.primary }}>${totalThisMonth.toFixed(2)}</Text>
+                    Monthly Spending: <Text variant="labelLarge" style={{ color: theme.colors.primary }}>AED{totalThisMonth.toFixed(2)}</Text>
                 </Text>
             </View>
-            <View style={[styles.iconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
-                <Ionicons name="receipt-outline" size={24} color={theme.colors.primary} />
-            </View>
+            <TouchableOpacity 
+              onPress={() => {
+                closeOpenSwipeable();
+                navigation.navigate('Budget');
+              }}
+              style={[styles.iconContainer, { backgroundColor: theme.colors.primary + '15' }]}
+            >
+                <Ionicons name="storefront-outline" size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
           </View>
 
           <Searchbar

@@ -1,19 +1,59 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Card, Divider, ProgressBar, Surface, Text, useTheme } from 'react-native-paper';
+import { Button, Card, Dialog, Divider, FAB, Menu, Portal, ProgressBar, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { useSnackbar } from '../../hooks/useSnackbar';
+import { setBudget } from '../../redux/slices/budgetSlice';
 import { RootState } from '../../redux/store';
 
 const BudgetScreen = ({ navigation }: any) => {
   const theme = useTheme();
+  const dispatch = useDispatch();
+  const { showSnackbar } = useSnackbar();
   const { budgets } = useSelector((state: RootState) => state.budget);
   const { categories } = useSelector((state: RootState) => state.expenses);
+
+  const [visible, setVisible] = React.useState(false);
+  const [selectedCategory, setSelectedCategory] = React.useState('');
+  const [categoryMenuVisible, setCategoryMenuVisible] = React.useState(false);
+  const [amount, setAmount] = React.useState('');
 
   const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
   const overallProgress = totalBudget > 0 ? totalSpent / totalBudget : 0;
+
+  const showModal = () => setVisible(true);
+  const hideModal = () => {
+    setVisible(false);
+    setAmount('');
+    setSelectedCategory('');
+  };
+
+  const handleSaveBudget = () => {
+    if (!selectedCategory) {
+      showSnackbar('Please select a category', 'error');
+      return;
+    }
+    if (!amount || isNaN(parseFloat(amount))) {
+      showSnackbar('Please enter a valid amount', 'error');
+      return;
+    }
+    
+    // Calculate current spent for this category
+    const { expenses } = require('../../redux/store').store.getState().expenses;
+    const spent = expenses.filter((e: any) => e.category === selectedCategory).reduce((sum: number, e: any) => sum + e.amount, 0);
+
+    dispatch(setBudget({
+      category: selectedCategory,
+      limit: parseFloat(amount),
+      spent: spent
+    }));
+
+    showSnackbar(`Budget set for ${selectedCategory}`, 'success');
+    hideModal();
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -45,12 +85,12 @@ const BudgetScreen = ({ navigation }: any) => {
             <View style={styles.overallStats}>
                 <View>
                     <Text variant="labelSmall" style={styles.statLabel}>Spent</Text>
-                    <Text variant="titleSmall" style={styles.statValue}>${totalSpent.toFixed(2)}</Text>
+                    <Text variant="titleSmall" style={styles.statValue}>AED{totalSpent.toFixed(2)}</Text>
                 </View>
                 <Divider style={styles.verticalDivider} />
                 <View style={{ alignItems: 'flex-end' }}>
                     <Text variant="labelSmall" style={styles.statLabel}>Limit</Text>
-                    <Text variant="titleSmall" style={styles.statValue}>${totalBudget.toFixed(2)}</Text>
+                    <Text variant="titleSmall" style={styles.statValue}>AED{totalBudget.toFixed(2)}</Text>
                 </View>
             </View>
           </View>
@@ -79,7 +119,7 @@ const BudgetScreen = ({ navigation }: any) => {
                                           <Text variant="titleMedium" style={styles.catName}>{budget.category}</Text>
                                       </View>
                                       <Text variant="bodySmall" style={isOver ? { color: theme.colors.error, fontWeight: 'bold' } : { opacity: 0.6 }}>
-                                          ${budget.spent.toFixed(0)} / ${budget.limit.toFixed(0)}
+                                          AED{budget.spent.toFixed(0)} / AED{budget.limit.toFixed(0)}
                                       </Text>
                                   </View>
                                   
@@ -94,7 +134,7 @@ const BudgetScreen = ({ navigation }: any) => {
                                           {isOver ? 'Exceeded by' : 'Remaining'}
                                       </Text>
                                       <Text variant="labelSmall" style={{ fontWeight: 'bold', color: isOver ? theme.colors.error : '#4CAF50' }}>
-                                          ${Math.abs(budget.limit - budget.spent).toFixed(2)}
+                                          AED{Math.abs(budget.limit - budget.spent).toFixed(2)}
                                       </Text>
                                   </View>
                               </Card.Content>
@@ -110,6 +150,79 @@ const BudgetScreen = ({ navigation }: any) => {
           )}
         </ScrollView>
       </Animated.View>
+
+      <FAB
+        icon="plus"
+        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        color="white"
+        onPress={showModal}
+      />
+
+      <Portal>
+        <Dialog visible={visible} onDismiss={hideModal} style={{ borderRadius: 24, backgroundColor: theme.colors.surface }}>
+          <Dialog.Title style={{ fontWeight: 'bold' }}>Set Category Budget</Dialog.Title>
+          <Dialog.Content>
+            <View style={styles.pickerSection}>
+                <Text variant="labelLarge" style={styles.pickerLabel}>Category</Text>
+                <Menu
+                    visible={categoryMenuVisible}
+                    onDismiss={() => setCategoryMenuVisible(false)}
+                    contentStyle={{ borderRadius: 20 }}
+                    anchor={
+                        <TouchableOpacity 
+                            onPress={() => setCategoryMenuVisible(true)}
+                            style={[styles.pickerTrigger, { borderColor: theme.colors.outline }]}
+                        >
+                            <View style={styles.pickerValue}>
+                                {selectedCategory ? (
+                                    <>
+                                        <View style={[styles.iconBox, { backgroundColor: (categories.find(c => c.name === selectedCategory)?.color || theme.colors.primary) + '15', marginRight: 12 }]}>
+                                            <Ionicons 
+                                                name={(categories.find(c => c.name === selectedCategory)?.icon || 'help-circle') as any} 
+                                                size={18} 
+                                                color={categories.find(c => c.name === selectedCategory)?.color || theme.colors.primary} 
+                                            />
+                                        </View>
+                                        <Text variant="bodyLarge">{selectedCategory}</Text>
+                                    </>
+                                ) : (
+                                    <Text variant="bodyLarge" style={{ opacity: 0.5 }}>Select a category</Text>
+                                )}
+                            </View>
+                            <Ionicons name="chevron-down" size={20} color={theme.colors.onSurfaceVariant} />
+                        </TouchableOpacity>
+                    }
+                >
+                    {categories.map((cat) => (
+                        <Menu.Item 
+                            key={cat.id} 
+                            onPress={() => {
+                                setSelectedCategory(cat.name);
+                                setCategoryMenuVisible(false);
+                            }} 
+                            title={cat.name}
+                            leadingIcon={() => <Ionicons name={cat.icon as any} size={20} color={cat.color} />}
+                        />
+                    ))}
+                </Menu>
+            </View>
+            <TextInput
+              label="Budget Limit Amount"
+              mode="outlined"
+              keyboardType="numeric"
+              value={amount}
+              onChangeText={setAmount}
+              style={{ backgroundColor: 'transparent', marginTop: 16 }}
+              outlineStyle={{ borderRadius: 16 }}
+              left={<TextInput.Affix text="AED" />}
+            />
+          </Dialog.Content>
+          <Dialog.Actions style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+            <Button onPress={hideModal} textColor={theme.colors.onSurfaceVariant}>Cancel</Button>
+            <Button mode="contained" onPress={handleSaveBudget} style={{ borderRadius: 12 }}>Save</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 };
@@ -230,7 +343,36 @@ const styles = StyleSheet.create({
       justifyContent: 'center',
       marginTop: 60,
       opacity: 0.5,
-  }
+  },
+  fab: {
+    position: 'absolute',
+    margin: 16,
+    right: 8,
+    bottom: 8,
+    borderRadius: 20,
+  },
+  pickerSection: {
+    marginVertical: 4,
+  },
+  pickerLabel: {
+      marginLeft: 4,
+      marginBottom: 8,
+      fontWeight: 'bold',
+      opacity: 0.6,
+  },
+  pickerTrigger: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 16,
+    backgroundColor: 'white',
+  },
+  pickerValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 });
 
 export default BudgetScreen;
