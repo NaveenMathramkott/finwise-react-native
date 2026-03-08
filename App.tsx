@@ -7,7 +7,7 @@ import CustomAlertComponent from './src/components/common/CustomAlert';
 import { SnackbarProvider } from './src/hooks/useSnackbar';
 import Navigation from './src/navigation';
 import { RootState, store } from './src/redux/store';
-import { darkTheme, theme as lightTheme } from './src/utils/theme';
+import { COLORS, darkTheme, theme as lightTheme } from './src/utils/theme';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -21,7 +21,7 @@ const MainApp = () => {
         <SnackbarProvider>
           <StatusBar 
           style={currentTheme === 'dark' ? 'light' : 'dark'} 
-          backgroundColor={theme.colors.background}
+          backgroundColor={COLORS.primary}
         />
         <Navigation />
         <CustomAlertComponent />
