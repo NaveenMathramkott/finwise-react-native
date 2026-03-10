@@ -1,0 +1,4 @@
+src/utils/formatters.ts(1,32): error TS7006: Parameter 'amount' implicitly has an 'any' type.
+src/utils/formatters.ts(8,28): error TS7006: Parameter 'date' implicitly has an 'any' type.
+src/utils/validators.ts(1,31): error TS7006: Parameter 'email' implicitly has an 'any' type.
+src/utils/validators.ts(6,34): error TS7006: Parameter 'password' implicitly has an 'any' type.
