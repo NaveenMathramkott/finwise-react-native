@@ -30,7 +30,7 @@ export const SnackbarProvider = ({ children }: { children: ReactNode }) => {
   const getBackgroundColor = () => {
     switch (type) {
       case 'success':
-        return  theme.colors.primary || '#4CAF50';
+        return   '#4CAF50';
       case 'error':
         return theme.colors.error || '#F44336';
       case 'info':
@@ -41,11 +41,18 @@ export const SnackbarProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <SnackbarContext.Provider value={{ showSnackbar, hideSnackbar }}>
-      {children}
+       {children}
       <Snackbar
         visible={visible}
         onDismiss={hideSnackbar}
         duration={3000}
+      wrapperStyle={{
+        position:'absolute',
+        bottom:50,
+        left:0,
+        right:0,
+        zIndex:10000
+      }}
         style={[
           styles.snackbar,
           { backgroundColor: getBackgroundColor() }
@@ -58,6 +65,7 @@ export const SnackbarProvider = ({ children }: { children: ReactNode }) => {
       >
         {message}
       </Snackbar>
+    
     </SnackbarContext.Provider>
   );
 };
