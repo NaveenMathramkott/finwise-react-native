@@ -4,15 +4,15 @@ import { Controller, useForm } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, HelperText, Text as PaperText, Surface, TextInput, useTheme } from "react-native-paper";
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useDispatch } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '../../redux/store';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { setUser } from '../../redux/slices/authSlice';
+import { loginUser } from '../../redux/slices/authSlice';
 
 const LoginScreen = ({ navigation }: any) => {
   const theme = useTheme();
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
+  const { loading } = useAppSelector((state) => state.auth);
   const { showSnackbar } = useSnackbar();
 
   const {
@@ -27,22 +27,17 @@ const LoginScreen = ({ navigation }: any) => {
   });
 
   const onSubmit = async (data: any) => {
-    setLoading(true);
     try {
-      setTimeout(() => {
-        dispatch(
-          setUser({
-            id: '1',
-            email: data.email,
-            name: 'John Doe',
-          })
-        );
+      const resultAction = await dispatch(loginUser({ email: data.email, password: data.password }));
+      
+      if (loginUser.fulfilled.match(resultAction)) {
         showSnackbar('Success - Welcome back!', 'success');
-        setLoading(false);
-      }, 1000);
+      } else {
+        const errorMessage = resultAction.payload as string || 'Login failed';
+        showSnackbar(`Error - ${errorMessage}`, 'error');
+      }
     } catch (error) {
-      showSnackbar('Error - Login error', 'error');
-      setLoading(false);
+      showSnackbar('Error - Something went wrong', 'error');
     }
   };
 

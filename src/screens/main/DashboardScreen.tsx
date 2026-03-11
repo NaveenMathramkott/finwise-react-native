@@ -50,9 +50,9 @@ const DashboardScreen = ({ navigation }: any) => {
         <Animated.View entering={FadeInUp.duration(600)} style={styles.headerWrapper}>
           <Surface style={[styles.headerCard, { backgroundColor: theme.colors.surface }]} elevation={4}>
             <View style={styles.headerTop}>
-              <View>
+              <View style={styles.nameWrapper}>
                 <Text variant="titleMedium" style={{ color: theme.colors.onSurfaceVariant }}>Welcome back,</Text>
-                <Text variant="headlineMedium" style={styles.userName}>
+                <Text variant="headlineSmall" style={styles.userName} numberOfLines={1}>
                   {user?.name || 'User'} 👋
                 </Text>
               </View>
@@ -208,9 +208,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
+    width: '100%',
+  },
+  nameWrapper:{
+    width: '80%',
   },
   userName: {
     fontWeight: 'bold',
+    width:"100%"
   },
   statsOverview: {
     flexDirection: 'row',
