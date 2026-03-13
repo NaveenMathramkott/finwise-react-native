@@ -1,4 +1,4 @@
-# **FinWise - Personal Finance Management App**
+# **FinWise - Personal AI Finance Management App**
 
 FinWise is a comprehensive personal finance management application designed to empower users to take control of their financial well-being. With a suite of intelligent features powered by AI, FinWise simplifies expense tracking, provides actionable insights, and helps users achieve their financial goals.
 
