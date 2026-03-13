@@ -29,18 +29,38 @@ const ProfileScreen = ({ navigation }: any) => {
   dispatch(toggleTheme());
  };
 
- const handleLogout = () => {
-  CustomAlert.alert(
-   'Logout',
-   '',
-   'Are you sure you want to log out of your account?',
-   () => {
-    dispatch(logoutUser())
-    dispatch(logout())
-   },
-   () => { }
-  );
- };
+  const handleLogout = () => {
+    CustomAlert.show({
+      title: 'Logout',
+      subtitle: 'Confirmation',
+      message: 'Are you sure you want to log out of your account?',
+      buttons: [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+             const resultAction = await dispatch(logoutUser());
+             if (logoutUser.fulfilled.match(resultAction)) {
+               dispatch(logout());
+             } else {
+               const errorMsg = resultAction.payload as string || 'Failed to sign out from server.';
+               CustomAlert.show({
+                 title: 'Logout Error',
+                 message: errorMsg,
+                 buttons: [{ text: 'OK' }]
+               });
+               // Still logout locally as a fallback
+               dispatch(logout());
+             }
+          },
+        },
+      ],
+    });
+  };
 
  const ProfileOption = ({ icon, title, subtitle, onPress, right, color }: any) => (
   <TouchableOpacity onPress={onPress} activeOpacity={0.7}>

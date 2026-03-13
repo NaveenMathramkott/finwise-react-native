@@ -3,17 +3,19 @@ import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, Card, Dialog, Divider, FAB, Menu, Portal, ProgressBar, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useDispatch, useSelector } from 'react-redux';
+
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { setBudget } from '../../redux/slices/budgetSlice';
-import { RootState } from '../../redux/store';
+import { createBudget, editBudget, fetchBudgets, removeBudget } from '../../redux/slices/budgetSlice';
+import { RootState, useAppDispatch, useAppSelector } from '../../redux/store';
+import { CustomAlert } from '../../utils/AlertService';
 
 const BudgetScreen = ({ navigation }: any) => {
   const theme = useTheme();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { showSnackbar } = useSnackbar();
-  const { budgets } = useSelector((state: RootState) => state.budget);
-  const { categories } = useSelector((state: RootState) => state.expenses);
+  const { budgets, loading } = useAppSelector((state: RootState) => state.budget);
+  const { categories } = useAppSelector((state: RootState) => state.expenses);
+  const { user } = useAppSelector((state: RootState) => state.auth);
 
   const [visible, setVisible] = React.useState(false);
   const [selectedCategory, setSelectedCategory] = React.useState('');
@@ -24,14 +26,39 @@ const BudgetScreen = ({ navigation }: any) => {
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
   const overallProgress = totalBudget > 0 ? totalSpent / totalBudget : 0;
 
-  const showModal = () => setVisible(true);
+  React.useEffect(() => {
+    if (user?.accountId) {
+      dispatch(fetchBudgets(user.accountId));
+    }
+  }, [dispatch, user?.accountId]);
+
+  const showModal = (budget?: any) => {
+    if (budget) {
+      setSelectedCategory(budget.category);
+      setAmount(budget.limit);
+    }
+    setVisible(true);
+  };
+
   const hideModal = () => {
     setVisible(false);
     setAmount('');
     setSelectedCategory('');
   };
 
-  const handleSaveBudget = () => {
+  const handleDeleteBudget = (id: string, category: string) => {
+    CustomAlert.alert(
+        'Delete Budget',
+        'BUDGET',
+        `Are you sure you want to delete the budget for ${category}?`,
+        () => {
+            dispatch(removeBudget(id));
+            showSnackbar(`Budget deleted for ${category}`, 'success');
+        }
+    );
+  };
+
+  const handleSaveBudget = async () => {
     if (!selectedCategory) {
       showSnackbar('Please select a category', 'error');
       return;
@@ -40,18 +67,45 @@ const BudgetScreen = ({ navigation }: any) => {
       showSnackbar('Please enter a valid amount', 'error');
       return;
     }
+
+    if (!user?.accountId) {
+      showSnackbar('Error - User session missing', 'error');
+      return;
+    }
     
     // Calculate current spent for this category
     const { expenses } = require('../../redux/store').store.getState().expenses;
     const spent = expenses.filter((e: any) => e.category === selectedCategory).reduce((sum: number, e: any) => sum + e.amount, 0);
 
-    dispatch(setBudget({
+    const existingBudget = budgets.find(b => b.category === selectedCategory);
+    
+    const budgetData = {
       category: selectedCategory,
       limit: parseFloat(amount),
-      spent: spent
-    }));
+      spent: spent,
+      user: user.accountId,
+    };
 
-    showSnackbar(`Budget set for ${selectedCategory}`, 'success');
+    try {
+        if (existingBudget) {
+            const result = await dispatch(editBudget({ id: existingBudget.id, ...budgetData }));
+            if (editBudget.fulfilled.match(result)) {
+                showSnackbar(`Budget updated for ${selectedCategory}`, 'success');
+            } else {
+                showSnackbar('Error - ' + (result.payload as string), 'error');
+            }
+        } else {
+            const result = await dispatch(createBudget(budgetData));
+            if (createBudget.fulfilled.match(result)) {
+                showSnackbar(`Budget set for ${selectedCategory}`, 'success');
+            } else {
+                showSnackbar('Error - ' + (result.payload as string), 'error');
+            }
+        }
+    } catch (error) {
+        showSnackbar('Error - Failed to save budget', 'error');
+    }
+
     hideModal();
   };
 
@@ -107,38 +161,46 @@ const BudgetScreen = ({ navigation }: any) => {
                   const progress = budget.limit > 0 ? budget.spent / budget.limit : 0;
                   const isOver = progress > 1;
 
-                  return (
+                   return (
                       <Animated.View key={budget.category} entering={FadeInDown.delay(300 + index * 100)}>
-                          <Card style={styles.budgetCard}>
-                              <Card.Content>
-                                  <View style={styles.budgetHeader}>
-                                      <View style={styles.catInfo}>
-                                          <View style={[styles.iconBox, { backgroundColor: (category?.color || theme.colors.primary) + '15' }]}>
-                                              <Ionicons name={(category?.icon || 'help-circle') as any} size={18} color={category?.color || theme.colors.primary} />
-                                          </View>
-                                          <Text variant="titleMedium" style={styles.catName}>{budget.category}</Text>
-                                      </View>
-                                      <Text variant="bodySmall" style={isOver ? { color: theme.colors.error, fontWeight: 'bold' } : { opacity: 0.6 }}>
-                                          AED{budget.spent.toFixed(0)} / AED{budget.limit.toFixed(0)}
-                                      </Text>
-                                  </View>
-                                  
-                                  <ProgressBar 
-                                      progress={Math.min(progress, 1)} 
-                                      color={isOver ? theme.colors.error : (category?.color || theme.colors.primary)} 
-                                      style={styles.categoryProgress} 
-                                  />
-                                  
-                                  <View style={styles.budgetFooter}>
-                                      <Text variant="labelSmall" style={{ opacity: 0.5 }}>
-                                          {isOver ? 'Exceeded by' : 'Remaining'}
-                                      </Text>
-                                      <Text variant="labelSmall" style={{ fontWeight: 'bold', color: isOver ? theme.colors.error : '#4CAF50' }}>
-                                          AED{Math.abs(budget.limit - budget.spent).toFixed(2)}
-                                      </Text>
-                                  </View>
-                              </Card.Content>
-                          </Card>
+                          <TouchableOpacity 
+                            onLongPress={() => handleDeleteBudget(budget.id, budget.category)}
+                            onPress={() => showModal(budget)}
+                            activeOpacity={0.7}
+                          >
+                            <Card style={styles.budgetCard}>
+                                <Card.Content>
+                                    <View style={styles.budgetHeader}>
+                                        <View style={styles.catInfo}>
+                                            <View style={[styles.iconBox, { backgroundColor: (category?.color || theme.colors.primary) + '15' }]}>
+                                                <Ionicons name={(category?.icon || 'help-circle') as any} size={18} color={category?.color || theme.colors.primary} />
+                                            </View>
+                                            <Text variant="titleMedium" style={styles.catName}>{budget.category}</Text>
+                                        </View>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                            <Text variant="bodySmall" style={isOver ? { color: theme.colors.error, fontWeight: 'bold' } : { opacity: 0.6 }}>
+                                                AED{budget.spent.toFixed(0)} / AED{budget.limit.toFixed(0)}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    
+                                    <ProgressBar 
+                                        progress={Math.min(progress, 1)} 
+                                        color={isOver ? theme.colors.error : (category?.color || theme.colors.primary)} 
+                                        style={styles.categoryProgress} 
+                                    />
+                                    
+                                    <View style={styles.budgetFooter}>
+                                        <Text variant="labelSmall" style={{ opacity: 0.5 }}>
+                                            {isOver ? 'Exceeded by' : 'Remaining'}
+                                        </Text>
+                                        <Text variant="labelSmall" style={{ fontWeight: 'bold', color: isOver ? theme.colors.error : '#4CAF50' }}>
+                                            AED{Math.abs(budget.limit - budget.spent).toFixed(2)}
+                                        </Text>
+                                    </View>
+                                </Card.Content>
+                            </Card>
+                          </TouchableOpacity>
                       </Animated.View>
                   );
               })

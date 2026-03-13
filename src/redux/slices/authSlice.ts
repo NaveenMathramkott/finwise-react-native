@@ -9,6 +9,7 @@ interface User {
   designation?: string;
   phone?: string;
   bio?: string;
+  accountId?: string;
 }
 
 interface AuthState {
@@ -51,11 +52,11 @@ export const loginUser = createAsyncThunk(
 export const updateUser = createAsyncThunk(
   "auth/update",
   async (
-    { userId, name, email, designation, phone, bio }: any,
+    { name, email, designation, phone, bio, accountId }: any,
     { rejectWithValue },
   ) => {
     try {
-      const user = await authService.updateProfile(userId, {
+      const user = await authService.updateProfile(accountId, {
         name,
         email,
         designation,
@@ -134,6 +135,10 @@ const authSlice = createSlice({
           state.isAuthenticated = true;
         }
       })
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(updateUser.fulfilled, (state, action: PayloadAction<any>) => {
         state.loading = false;
         if (action.payload) {
@@ -144,11 +149,16 @@ const authSlice = createSlice({
             designation: action.payload.designation,
             phone: action.payload.phone,
             bio: action.payload.bio,
+            accountId: action.payload.accountId,
           };
           state.isAuthenticated = true;
         }
       })
       .addCase(registerUser.rejected, (state, action: PayloadAction<any>) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(updateUser.rejected, (state, action: PayloadAction<any>) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -164,6 +174,7 @@ const authSlice = createSlice({
             id: action.payload.$id,
             name: action.payload.name,
             email: action.payload.email,
+            accountId: action.payload.accountId,
           };
           state.isAuthenticated = true;
         }
@@ -204,6 +215,7 @@ const authSlice = createSlice({
               designation: action.payload.designation,
               phone: action.payload.phone,
               bio: action.payload.bio,
+              accountId: action.payload.accountId,
             };
             state.isAuthenticated = true;
           } else {

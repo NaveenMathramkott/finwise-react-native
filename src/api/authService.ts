@@ -57,6 +57,7 @@ export async function getCurrentUser() {
     return null;
   }
 }
+
 // Get Current User Profile
 export async function getCurrentUserProfile(userId: string) {
   try {
@@ -106,6 +107,7 @@ export async function signOut() {
 export async function updateProfile(userId: string, data: any) {
   try {
     // First, find the document ID associated with this accountId
+    // This is done because the user document is not stored in the same collection as the user account
     const response = await databases.listDocuments(
       databaseId,
       usersCollectionId,
@@ -117,8 +119,6 @@ export async function updateProfile(userId: string, data: any) {
     }
 
     const documentId = response.documents[0].$id;
-
-    console.log("documentId", documentId);
 
     // Now update the document using its actual ID
     const updatedUser = await databases.updateDocument(

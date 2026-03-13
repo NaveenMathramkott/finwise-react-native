@@ -24,10 +24,10 @@ import {
 } from 'react-native-paper';
 import { DatePickerInput, en, registerTranslation } from 'react-native-paper-dates';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useDispatch, useSelector } from 'react-redux';
+
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { addExpense, updateExpense } from '../../redux/slices/expensesSlice';
-import { RootState } from '../../redux/store';
+import { createExpense, editExpense } from '../../redux/slices/expensesSlice';
+import { RootState, useAppDispatch, useAppSelector } from '../../redux/store';
 
 registerTranslation('en', en);
 
@@ -36,12 +36,14 @@ type FormData = {
   amount: string;
   category: string;
   date: Date;
+  user: string;
 };
 
 const AddExpenseScreen = ({ navigation, route }: any) => {
   const theme = useTheme();
-  const dispatch = useDispatch();
-  const { categories } = useSelector((state: RootState) => state.expenses);
+  const dispatch = useAppDispatch();
+  const { categories } = useAppSelector((state: RootState) => state.expenses);
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const editingExpense = route.params?.expense;
   
   const [image, setImage] = useState<string | null>(editingExpense?.image || null);
@@ -61,6 +63,7 @@ const AddExpenseScreen = ({ navigation, route }: any) => {
       amount: editingExpense?.amount?.toString() || '',
       category: editingExpense?.category || 'Other',
       date: editingExpense?.date ? new Date(editingExpense.date) : new Date(),
+      user: user?.accountId!,
     },
   });
 
@@ -101,26 +104,40 @@ const AddExpenseScreen = ({ navigation, route }: any) => {
     }
   };
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
+    if (!user?.accountId) {
+      showSnackbar('Error - User session missing', 'error');
+      return;
+    }
+    
     setLoading(true);
     try {
       const expenseData = {
-        id: editingExpense?.id || Date.now().toString(),
         title: data.title,
         amount: parseFloat(data.amount),
         category: data.category,
         date: data.date.toISOString().split('T')[0],
         image: image || undefined,
+        user: user.accountId,
       };
 
       if (editingExpense) {
-        dispatch(updateExpense(expenseData));
-        showSnackbar('Success - Expense updated', 'success');
+        const result = await dispatch(editExpense({ id: editingExpense.id, ...expenseData }));
+        if (editExpense.fulfilled.match(result)) {
+            showSnackbar('Success - Expense updated', 'success');
+            navigation.goBack();
+        } else {
+            showSnackbar('Error - ' + (result.payload as string), 'error');
+        }
       } else {
-        dispatch(addExpense(expenseData));
-        showSnackbar('Success - Expense added', 'success');
+        const result = await dispatch(createExpense(expenseData));
+        if (createExpense.fulfilled.match(result)) {
+            showSnackbar('Success - Expense added', 'success');
+            navigation.goBack();
+        } else {
+            showSnackbar('Error - ' + (result.payload as string), 'error');
+        }
       }
-      navigation.goBack();
     } catch (error) {
       showSnackbar('Error - Failed to save expense', 'error');
     } finally {

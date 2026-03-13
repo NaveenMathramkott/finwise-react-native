@@ -4,16 +4,27 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Card, Divider, List, ProgressBar, Surface, Text, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../redux/store';
+import { RootState, useAppDispatch, useAppSelector } from '../../redux/store';
+import { fetchExpenses } from '../../redux/slices/expensesSlice';
+import { fetchBudgets } from '../../redux/slices/budgetSlice';
 import { getScoreColor, getScoreLabel } from '../../utils/constants';
 
 const ReportsScreen = ({ navigation }: any) => {
   const theme = useTheme();
-  const { expenses } = useSelector((state: RootState) => state.expenses);
-  const { budgets } = useSelector((state: RootState) => state.budget);
+  const dispatch = useAppDispatch();
+  const { expenses } = useAppSelector((state: RootState) => state.expenses);
+  const { budgets } = useAppSelector((state: RootState) => state.budget);
+  const { user } = useAppSelector((state: RootState) => state.auth);
+
+  React.useEffect(() => {
+    if (user?.accountId) {
+      dispatch(fetchExpenses(user.accountId));
+      dispatch(fetchBudgets(user.accountId));
+    }
+  }, [dispatch, user?.accountId]);
 
   // AI Calculations
-  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
   const mockedIncome = 5000; 
   
   const savingsRate = Math.max(0, ((mockedIncome - totalExpenses) / mockedIncome) * 100);

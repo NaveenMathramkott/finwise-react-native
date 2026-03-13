@@ -4,19 +4,20 @@ import { ActivityIndicator, Keyboard, StyleSheet, TouchableOpacity, View } from 
 import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { Chip, FAB, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useDispatch, useSelector } from 'react-redux';
+
 import SwipeableExpenseCard from '../../components/expenses/SwipeableExpenseCard';
-import { deleteExpense } from '../../redux/slices/expensesSlice';
-import { RootState } from '../../redux/store';
+import { fetchExpenses, removeExpense } from '../../redux/slices/expensesSlice';
+import { RootState, useAppDispatch, useAppSelector } from '../../redux/store';
 import { CustomAlert } from '../../utils/AlertService';
 
 const PAGE_SIZE = 10;
 
 const ExpensesScreen = ({ navigation }: any) => {
   const theme = useTheme();
-  const dispatch = useDispatch();
-  const { expenses } = useSelector((state: RootState) => state.expenses);
-  
+  const dispatch = useAppDispatch();
+  const { expenses, loading } = useAppSelector((state: RootState) => state.expenses);
+  const { user } = useAppSelector((state: RootState) => state.auth);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [displayedExpenses, setDisplayedExpenses] = useState<any[]>([]);
   const [page, setPage] = useState(1);
@@ -40,6 +41,12 @@ const ExpensesScreen = ({ navigation }: any) => {
     }
     return sum;
   }, 0);
+
+  useEffect(() => {
+    if (user?.accountId) {
+      dispatch(fetchExpenses(user.accountId));
+    }
+  }, [dispatch, user?.accountId]);
 
   // Initial load, search filtering and sorting
   useEffect(() => {
@@ -111,7 +118,7 @@ const ExpensesScreen = ({ navigation }: any) => {
       'Delete Expense',
       'EXPENSE',
       'Are you sure you want to delete this expense permanent?',
-      () => dispatch(deleteExpense(id))
+      () => dispatch(removeExpense(id))
     );
   };
 
@@ -147,7 +154,7 @@ const ExpensesScreen = ({ navigation }: any) => {
             <View>
                 <Text variant="headlineMedium" style={styles.screenTitle}>My Expenses</Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Monthly Spending: <Text variant="labelLarge" style={{ color: theme.colors.primary }}>AED{totalThisMonth.toFixed(2)}</Text>
+                    {/* Monthly Spending: <Text variant="labelLarge" style={{ color: theme.colors.primary }}>AED{totalThisMonth.toFixed(2)}</Text> */}
                 </Text>
             </View>
             <TouchableOpacity 

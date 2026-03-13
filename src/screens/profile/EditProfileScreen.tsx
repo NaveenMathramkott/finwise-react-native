@@ -5,9 +5,10 @@ import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } fr
 import { ScrollView } from 'react-native-gesture-handler';
 import { Avatar, Button, HelperText, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useAppDispatch, useAppSelector } from '../../redux/store';
 import { useSnackbar } from '../../hooks/useSnackbar';
 import { updateUser } from '../../redux/slices/authSlice';
+import { useAppDispatch, useAppSelector } from '../../redux/store';
+import { CustomAlert } from '../../utils/AlertService';
 
 const EditProfileScreen = ({ navigation }: any) => {
   const theme = useTheme();
@@ -27,31 +28,49 @@ const EditProfileScreen = ({ navigation }: any) => {
       phone: user?.phone || '',
       bio: user?.bio || '',
       designation:user?.designation || '',
+      accountId:user?.accountId || '',
     },
   });
 
-  const onSubmit = async(data: any) => {
-   setLoading(true)
-   try {
-    if (!user?.id) throw new Error("User ID is required to update profile.");
-      dispatch(
+
+  const onSubmit = async (data: any) => {
+    setLoading(true);
+    try {
+      if (!user?.id) throw new Error("User ID is required to update profile.");
+      const resultAction = await dispatch(
         updateUser({
-          userId: user.id, 
+          userId: user.id,
+          accountId: user.accountId,
           name: data.name,
           email: data.email,
-          designation:data.designation,
-          phone:data.phone,
-          bio:data.bio,
+          designation: data.designation,
+          phone: data.phone,
+          bio: data.bio,
         })
       );
-    showSnackbar('Profile Updated - Your information has been saved successfully.', 'success');
-    setLoading(false);
-    navigation.goBack();
-   } catch (error) {
-    console.log(error);
-    showSnackbar('Error - Your information has not been saved .', 'error');
-    setLoading(false);
-   }
+
+      if (updateUser.fulfilled.match(resultAction)) {
+        CustomAlert.show({
+          title: 'Profile Updated',
+          subtitle: 'Success',
+          message: 'Your information has been saved successfully.',
+          buttons: [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+              style: 'default',
+            },
+          ],
+        });
+      } else {
+        const errorMsg = resultAction.payload as string || 'Your information has not been saved.';
+        showSnackbar(`Error - ${errorMsg}`, 'error');
+      }
+    } catch (error: any) {
+      showSnackbar('Error - Something went wrong while saving your profile.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

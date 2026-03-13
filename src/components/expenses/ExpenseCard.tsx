@@ -48,10 +48,10 @@ const ExpenseCard = ({ expense, paddingHoz=22 }: ExpenseCardProps) => {
         )}
         <View style={styles.details}>
           <Text variant="titleMedium" style={{ fontWeight: '600' }}>{expense.title}</Text>
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>{expense.category} • {expense.date}</Text>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>{expense.category} • {expense.date.split("T")[0]}</Text>
         </View>
         <Text variant="titleMedium" style={[styles.amount, { color: theme.colors.error }]}>
-          AED {expense.amount.toFixed(2)}
+          AED {Number(expense.amount).toFixed(2)}
         </Text>
       </View>
     </Card>
