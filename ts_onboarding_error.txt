@@ -1,1 +1,0 @@
-src/screens/auth/OnboardingScreen.tsx(205,90): error TS2322: Type '24' is not assignable to type 'Elevation | undefined'.

@@ -1,19 +1,26 @@
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect } from 'react';
 import 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
-import { Provider as StoreProvider, useSelector } from 'react-redux';
+import 'react-native-url-polyfill/auto';
+import { Provider as StoreProvider, useDispatch, useSelector } from 'react-redux';
 import CustomAlertComponent from './src/components/common/CustomAlert';
 import { SnackbarProvider } from './src/hooks/useSnackbar';
 import Navigation from './src/navigation';
-import { RootState, store } from './src/redux/store';
+import { checkAuthStatus } from './src/redux/slices/authSlice';
+import { AppDispatch, RootState, store } from './src/redux/store';
 import { COLORS, darkTheme, theme as lightTheme } from './src/utils/theme';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const MainApp = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const currentTheme = useSelector((state: RootState) => state.ui.theme);
   const theme = currentTheme === 'dark' ? darkTheme : lightTheme;
+
+  useEffect(() => {
+    dispatch(checkAuthStatus());
+  }, [dispatch]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

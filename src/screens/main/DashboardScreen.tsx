@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
  RefreshControl,
  ScrollView,
@@ -9,17 +9,24 @@ import {
 } from 'react-native';
 import { Avatar, Card, Surface, Text, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useSelector } from 'react-redux';
 import SpendingPieChart from '../../components/charts/SpendingPieChart';
 import TrendLineChart from '../../components/charts/TrendLineChart';
 import ExpenseCard from '../../components/expenses/ExpenseCard';
-import { RootState } from '../../redux/store';
+import { fetchExpenses } from '../../redux/slices/expensesSlice';
+import { RootState, useAppDispatch, useAppSelector } from '../../redux/store';
 
 const DashboardScreen = ({ navigation }: any) => {
   const theme = useTheme();
-  const { expenses, categories } = useSelector((state: RootState) => state.expenses);
-  const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useAppDispatch();
+  const { expenses, categories } = useAppSelector((state: RootState) => state.expenses);
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const [refreshing, setRefreshing] = React.useState(false);
+
+    useEffect(() => {
+    if (user?.accountId) {
+      dispatch(fetchExpenses(user.accountId));
+    }
+  }, [dispatch, user?.accountId]);
 
   // Calculate statistics
   const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -32,7 +39,10 @@ const DashboardScreen = ({ navigation }: any) => {
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 2000);
+    if (user?.accountId) {
+      dispatch(fetchExpenses(user.accountId));
+     }
+     setRefreshing(false);
   }, []);
 
   return (
@@ -50,9 +60,9 @@ const DashboardScreen = ({ navigation }: any) => {
         <Animated.View entering={FadeInUp.duration(600)} style={styles.headerWrapper}>
           <Surface style={[styles.headerCard, { backgroundColor: theme.colors.surface }]} elevation={4}>
             <View style={styles.headerTop}>
-              <View>
+              <View style={styles.nameWrapper}>
                 <Text variant="titleMedium" style={{ color: theme.colors.onSurfaceVariant }}>Welcome back,</Text>
-                <Text variant="headlineMedium" style={styles.userName}>
+                <Text variant="headlineSmall" style={styles.userName} numberOfLines={1}>
                   {user?.name || 'User'} 👋
                 </Text>
               </View>
@@ -71,7 +81,7 @@ const DashboardScreen = ({ navigation }: any) => {
                   <Ionicons name="wallet-outline" size={20} color="#4CAF50" />
                 </View>
                 <Text variant="labelSmall" style={styles.statLabel}>Total Spent</Text>
-                <Text variant="titleMedium" style={styles.statValue}>${totalSpent.toFixed(2)}</Text>
+                <Text variant="titleMedium" style={styles.statValue}>AED{Number(totalSpent).toFixed(2)}</Text>
               </View>
               <Divider vertical />
               <View style={styles.statBox}>
@@ -79,7 +89,7 @@ const DashboardScreen = ({ navigation }: any) => {
                   <Ionicons name="calendar-outline" size={20} color="#2196F3" />
                 </View>
                 <Text variant="labelSmall" style={styles.statLabel}>Daily Avg</Text>
-                <Text variant="titleMedium" style={styles.statValue}>${averageDaily.toFixed(2)}</Text>
+                <Text variant="titleMedium" style={styles.statValue}>AED{Number(averageDaily).toFixed(2)}</Text>
               </View>
               <Divider vertical />
               <View style={styles.statBox}>
@@ -87,7 +97,7 @@ const DashboardScreen = ({ navigation }: any) => {
                   <Ionicons name="trending-up-outline" size={20} color="#F44336" />
                 </View>
                 <Text variant="labelSmall" style={styles.statLabel}>Largest</Text>
-                <Text variant="titleMedium" style={styles.statValue}>${largestExpense.toFixed(2)}</Text>
+                <Text variant="titleMedium" style={styles.statValue}>AED{Number(largestExpense).toFixed(2)}</Text>
               </View>
             </View>
           </Surface>
@@ -208,9 +218,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
+    width: '100%',
+  },
+  nameWrapper:{
+    width: '80%',
   },
   userName: {
     fontWeight: 'bold',
+    width:"100%"
   },
   statsOverview: {
     flexDirection: 'row',

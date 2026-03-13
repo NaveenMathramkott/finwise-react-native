@@ -5,15 +5,15 @@ import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } fr
 import { ScrollView } from 'react-native-gesture-handler';
 import { Avatar, Button, HelperText, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useDispatch, useSelector } from 'react-redux';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { setUser } from '../../redux/slices/authSlice';
-import { RootState } from '../../redux/store';
+import { updateUser } from '../../redux/slices/authSlice';
+import { useAppDispatch, useAppSelector } from '../../redux/store';
+import { CustomAlert } from '../../utils/AlertService';
 
 const EditProfileScreen = ({ navigation }: any) => {
   const theme = useTheme();
-  const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
   const { showSnackbar } = useSnackbar();
 
@@ -25,26 +25,52 @@ const EditProfileScreen = ({ navigation }: any) => {
     defaultValues: {
       name: user?.name || '',
       email: user?.email || '',
-      phone: '',
-      bio: '',
+      phone: user?.phone || '',
+      bio: user?.bio || '',
+      designation:user?.designation || '',
+      accountId:user?.accountId || '',
     },
   });
 
-  const onSubmit = (data: any) => {
+
+  const onSubmit = async (data: any) => {
     setLoading(true);
-    setTimeout(() => {
-      dispatch(
-        setUser({
-          id: user?.id || '1',
-          ...user,
+    try {
+      if (!user?.id) throw new Error("User ID is required to update profile.");
+      const resultAction = await dispatch(
+        updateUser({
+          userId: user.id,
+          accountId: user.accountId,
           name: data.name,
           email: data.email,
+          designation: data.designation,
+          phone: data.phone,
+          bio: data.bio,
         })
       );
-      showSnackbar('Profile Updated - Your information has been saved successfully.', 'success');
+
+      if (updateUser.fulfilled.match(resultAction)) {
+        CustomAlert.show({
+          title: 'Profile Updated',
+          subtitle: 'Success',
+          message: 'Your information has been saved successfully.',
+          buttons: [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+              style: 'default',
+            },
+          ],
+        });
+      } else {
+        const errorMsg = resultAction.payload as string || 'Your information has not been saved.';
+        showSnackbar(`Error - ${errorMsg}`, 'error');
+      }
+    } catch (error: any) {
+      showSnackbar('Error - Something went wrong while saving your profile.', 'error');
+    } finally {
       setLoading(false);
-      navigation.goBack();
-    }, 1000);
+    }
   };
 
   return (
@@ -91,7 +117,7 @@ const EditProfileScreen = ({ navigation }: any) => {
                   rules={{ required: 'Name is required' }}
                   render={({ field: { onChange, onBlur, value } }) => (
                     <TextInput
-                      label="Full Name"
+                      label="User Name"
                       mode="outlined"
                       onBlur={onBlur}
                       onChangeText={onChange}
@@ -133,6 +159,26 @@ const EditProfileScreen = ({ navigation }: any) => {
                 />
                 {errors.email && <HelperText type="error" visible={true}>{errors.email.message as string}</HelperText>}
 
+<Controller
+                  control={control}
+                  name="designation"
+                  rules={{ required: 'Designation is required' }}
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <TextInput
+                      label="Designation"
+                      mode="outlined"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                      error={!!errors.designation}
+                      style={styles.input}
+                      outlineStyle={{ borderRadius: 16 }}
+                      left={<TextInput.Icon icon={() => <Ionicons name="briefcase-outline" size={20} color={theme.colors.primary} />} />}
+                    />
+                  )}
+                />
+                {errors.designation && <HelperText type="error" visible={true}>{errors.designation.message as string}</HelperText>}
+               
                 <Controller
                   control={control}
                   name="phone"

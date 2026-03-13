@@ -25,23 +25,34 @@ const TrendLineChart = ({ expenses }: TrendLineChartProps) => {
   const dailyData = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
+    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
     const dateStr = d.toISOString().split('T')[0];
     const total = expenses
-      .filter(exp => exp.date === dateStr)
-      .reduce((sum, exp) => sum + exp.amount, 0);
-    return { day: i, amount: total };
+      .filter(exp => (exp.date || '').split('T')[0] === dateStr)
+      .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+    return { 
+      day: dayName, 
+      amount: total,
+      index: i 
+    };
   });
 
   return (
     <View style={styles.container}>
       <CartesianChart 
         data={dailyData} 
-        xKey="day" 
+        xKey="index" 
         yKeys={["amount"]}
         axisOptions={{
-          font: undefined, // Will use default system font
+          font: undefined,
           labelColor: theme.colors.onSurfaceVariant,
           lineColor: theme.colors.outlineVariant,
+          tickCount: 7,
+          formatYLabel: (v) => `AED${v}`,
+          formatXLabel: (v) => {
+             const item = dailyData.find(d => d.index === v);
+             return item ? item.day : '';
+          }
         }}
       >
         {({ points }) => (
@@ -59,9 +70,9 @@ const TrendLineChart = ({ expenses }: TrendLineChartProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 200,
+    height: 220,
     width: '100%',
-    paddingTop: 10,
+    paddingBottom: 20,
   },
 });
 

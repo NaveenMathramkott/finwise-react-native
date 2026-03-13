@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { fetchCategories } from '../redux/slices/expensesSlice';
+import { useAppDispatch } from '../redux/store';
 import AddExpenseScreen from '../screens/expense/AddExpenseScreen';
 import BudgetScreen from '../screens/expense/BudgetScreen';
 import AIAssistantScreen from '../screens/main/AIAssistantScreen';
@@ -50,6 +52,12 @@ const ReportsStack = () => (
 );
 
 const MainTabNavigator = () => {
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

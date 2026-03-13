@@ -5,15 +5,15 @@ import { KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } fr
 import { ScrollView } from 'react-native-gesture-handler';
 import { Button, HelperText, Text as PaperText, Surface, TextInput, useTheme } from "react-native-paper";
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useDispatch } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '../../redux/store';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { setUser } from '../../redux/slices/authSlice';
+import { registerUser } from '../../redux/slices/authSlice';
 
 const RegisterScreen = ({ navigation }: any) => {
   const theme = useTheme();
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
+  const { loading } = useAppSelector((state) => state.auth);
   const { showSnackbar } = useSnackbar();
 
   const {
@@ -29,22 +29,21 @@ const RegisterScreen = ({ navigation }: any) => {
   });
 
   const onSubmit = async (data: any) => {
-    setLoading(true);
     try {
-      setTimeout(() => {
-        dispatch(
-          setUser({
-            id: Date.now().toString(),
-            email: data.email,
-            name: data.name,
-          })
-        );
+      const resultAction = await dispatch(registerUser({ 
+        email: data.email, 
+        password: data.password, 
+        name: data.name 
+      }));
+      
+      if (registerUser.fulfilled.match(resultAction)) {
         showSnackbar('Success - Account created successfully!', 'success');
-        setLoading(false);
-      }, 1000);
+      } else {
+        const errorMessage = resultAction.payload as string || 'Registration failed';
+        showSnackbar(`Error - ${errorMessage}`, 'error');
+      }
     } catch (error) {
-      showSnackbar('Error - Registration failed', 'error');
-      setLoading(false);
+      showSnackbar('Error - Something went wrong', 'error');
     }
   };
 
@@ -73,12 +72,12 @@ const RegisterScreen = ({ navigation }: any) => {
                     control={control}
                     name="name"
                     rules={{
-                      required: 'Full name is required',
+                      required: 'User name is required',
                       minLength: { value: 3, message: 'Name must be at least 3 characters' },
                     }}
                     render={({ field: { onChange, onBlur, value } }) => (
                       <TextInput
-                        label="Full Name"
+                        label="User Name"
                         mode="outlined"
                         onBlur={onBlur}
                         onChangeText={onChange}
