@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { functions } from "../../api/appwrite";
 
 interface Message {
   id: string;
@@ -30,29 +31,6 @@ const initialState: AIState = {
     "Give me saving tips",
     "Compare this month with last month",
   ],
-};
-
-// Mocked AI API call
-const mockAiResponse = async (question: string): Promise<string> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const responses: { [key: string]: string } = {
-        "how much did i spend on food":
-          "You've spent approximately $450 on food this month, which is 15% more than last month.",
-        "show me my largest expenses":
-          "Your largest expenses this month are: Rent ($1,200), Groceries ($350), and Utilities ($150).",
-        "give me saving tips":
-          "Consider setting a budget for dining out and review your monthly subscriptions to identify any unused services.",
-        "compare this month with last month":
-          "Your total spending is down by 5% compared to last month. Great job!",
-      };
-      const key = question.toLowerCase();
-      resolve(
-        responses[key] ||
-          "I'm sorry, I don't have that information right now. I'm still learning!",
-      );
-    }, 1500);
-  });
 };
 
 export const sendMessage = createAsyncThunk(
