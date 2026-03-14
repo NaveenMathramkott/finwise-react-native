@@ -5,38 +5,37 @@ import { Pie, PolarChart } from 'victory-native';
 
 interface SpendingPieChartProps {
   expenses: any[];
-  categories: any[];
+  budgets: any[];
 }
 
-const SpendingPieChart = ({ expenses, categories }: SpendingPieChartProps) => {
+const SpendingPieChart = ({ expenses, budgets }: SpendingPieChartProps) => {
   const theme = useTheme();
   const screenWidth = Dimensions.get('window').width;
   const data = React.useMemo(() => {
-    if (!categories || !expenses) return [];
+    if (!budgets || !expenses) return [];
 
     const expenseTotals: Record<string, number> = {};
     expenses.forEach(exp => {
-      const catName = String(exp.category || '').toLowerCase().trim();
-      expenseTotals[catName] = (expenseTotals[catName] || 0) + Number(exp.amount || 0);
+      const bId = exp.budgetId || exp.category; // support migration
+      expenseTotals[bId] = (expenseTotals[bId] || 0) + Number(exp.amount || 0);
     });
 
-    const matchedCategoryNames = new Set<string>();
-    const chartData = categories.map(cat => {
-      const normalizedName = String(cat.name || '').toLowerCase().trim();
-      matchedCategoryNames.add(normalizedName);
+    const matchedBudgetIds = new Set<string>();
+    const chartData = budgets.map(budget => {
+      matchedBudgetIds.add(budget.id);
       
       return {
-        name: cat.name,
-        value: expenseTotals[normalizedName] || 0,
-        color: cat.color || theme.colors.primary,
-        id: cat.id
+        name: budget.name,
+        value: expenseTotals[budget.id] || 0,
+        color: budget.color || theme.colors.primary,
+        id: budget.id
       };
     });
 
     let otherTotal = 0;
-    Object.keys(expenseTotals).forEach(name => {
-      if (!matchedCategoryNames.has(name) || name === '') {
-        otherTotal += expenseTotals[name];
+    Object.keys(expenseTotals).forEach(id => {
+      if (!matchedBudgetIds.has(id)) {
+        otherTotal += expenseTotals[id];
       }
     });
 
@@ -52,7 +51,7 @@ const SpendingPieChart = ({ expenses, categories }: SpendingPieChartProps) => {
     }
 
     return finalData;
-  }, [categories, expenses, theme.colors.primary]);
+  }, [budgets, expenses, theme.colors.primary]);
   
 
   if (expenses.length === 0) {

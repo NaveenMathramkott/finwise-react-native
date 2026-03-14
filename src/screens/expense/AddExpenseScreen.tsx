@@ -34,7 +34,7 @@ registerTranslation('en', en);
 type FormData = {
   title: string;
   amount: string;
-  category: string;
+  budgetId: string;
   date: Date;
   user: string;
 };
@@ -42,12 +42,12 @@ type FormData = {
 const AddExpenseScreen = ({ navigation, route }: any) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const { categories } = useAppSelector((state: RootState) => state.expenses);
+  const { budgets } = useAppSelector((state: RootState) => state.budget);
   const { user } = useAppSelector((state: RootState) => state.auth);
   const editingExpense = route.params?.expense;
   
   const [image, setImage] = useState<string | null>(editingExpense?.image || null);
-  const [categoryMenuVisible, setCategoryMenuVisible] = useState(false);
+  const [budgetMenuVisible, setBudgetMenuVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const { showSnackbar } = useSnackbar();
 
@@ -61,13 +61,14 @@ const AddExpenseScreen = ({ navigation, route }: any) => {
     defaultValues: {
       title: editingExpense?.title || '',
       amount: editingExpense?.amount?.toString() || '',
-      category: editingExpense?.category || 'Other',
+      budgetId: editingExpense?.budgetId || budgets[0]?.id || '',
       date: editingExpense?.date ? new Date(editingExpense.date) : new Date(),
       user: user?.accountId!,
     },
   });
 
-  const selectedCategory = watch('category');
+  const selectedBudgetId = watch('budgetId');
+  const selectedBudgetObj = budgets.find(b => b.id === selectedBudgetId);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -115,7 +116,7 @@ const AddExpenseScreen = ({ navigation, route }: any) => {
       const expenseData = {
         title: data.title,
         amount: parseFloat(data.amount),
-        category: data.category,
+        budgetId: data.budgetId,
         date: data.date.toISOString().split('T')[0],
         image: image || undefined,
         user: user.accountId,
@@ -255,39 +256,39 @@ const AddExpenseScreen = ({ navigation, route }: any) => {
                 {errors.amount && <HelperText type="error">{errors.amount.message}</HelperText>}
 
                 <View style={styles.pickerSection}>
-                  <Text variant="labelLarge" style={styles.pickerLabel}>Category</Text>
+                  <Text variant="labelLarge" style={styles.pickerLabel}>Associated Budget</Text>
                   <Menu
-                    visible={categoryMenuVisible}
-                    onDismiss={() => setCategoryMenuVisible(false)}
+                    visible={budgetMenuVisible}
+                    onDismiss={() => setBudgetMenuVisible(false)}
                     contentStyle={{ borderRadius: 20 }}
                     anchor={
                       <TouchableOpacity 
-                        onPress={() => setCategoryMenuVisible(true)}
+                        onPress={() => setBudgetMenuVisible(true)}
                         style={[styles.pickerTrigger, { borderColor: theme.colors.outline }]}
                       >
                         <View style={styles.pickerValue}>
-                          <View style={[styles.catIconCircle, { backgroundColor: (categories.find(c => c.name === selectedCategory)?.color || theme.colors.primary) + '15' }]}>
+                          <View style={[styles.catIconCircle, { backgroundColor: (selectedBudgetObj?.color || theme.colors.primary) + '15' }]}>
                               <Ionicons 
-                                name={(categories.find(c => c.name === selectedCategory)?.icon || 'help-circle') as any} 
+                                name={(selectedBudgetObj?.icon || 'help-circle') as any} 
                                 size={18} 
-                                color={categories.find(c => c.name === selectedCategory)?.color || theme.colors.primary} 
+                                color={selectedBudgetObj?.color || theme.colors.primary} 
                               />
                           </View>
-                          <Text variant="bodyLarge" style={{ marginLeft: 12 }}>{selectedCategory}</Text>
+                          <Text variant="bodyLarge" style={{ marginLeft: 12 }}>{selectedBudgetObj?.name || 'Select a Budget'}</Text>
                         </View>
                         <Ionicons name="chevron-down" size={20} color={theme.colors.onSurfaceVariant} />
                       </TouchableOpacity>
                     }
                   >
-                    {categories.map((cat) => (
+                    {budgets.map((budget) => (
                       <Menu.Item 
-                        key={cat.id} 
+                        key={budget.id} 
                         onPress={() => {
-                          setValue('category', cat.name);
-                          setCategoryMenuVisible(false);
+                          setValue('budgetId', budget.id);
+                          setBudgetMenuVisible(false);
                         }} 
-                        title={cat.name}
-                        leadingIcon={() => <Ionicons name={cat.icon as any} size={20} color={cat.color} />}
+                        title={budget.name}
+                        leadingIcon={() => <Ionicons name={budget.icon as any} size={20} color={budget.color} />}
                       />
                     ))}
                   </Menu>

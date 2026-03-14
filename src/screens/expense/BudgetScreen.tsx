@@ -1,26 +1,31 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Button, Card, Dialog, Divider, FAB, Menu, Portal, ProgressBar, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Button, Card, Dialog, Divider, FAB, Portal, ProgressBar, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import { useSnackbar } from '../../hooks/useSnackbar';
 import { createBudget, editBudget, fetchBudgets, removeBudget } from '../../redux/slices/budgetSlice';
 import { RootState, useAppDispatch, useAppSelector } from '../../redux/store';
 import { CustomAlert } from '../../utils/AlertService';
+import { ICONS, PRESET_COLORS } from '../../utils/constants';
+
+
 
 const BudgetScreen = ({ navigation }: any) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const { showSnackbar } = useSnackbar();
   const { budgets, loading } = useAppSelector((state: RootState) => state.budget);
-  const { categories } = useAppSelector((state: RootState) => state.expenses);
   const { user } = useAppSelector((state: RootState) => state.auth);
 
   const [visible, setVisible] = React.useState(false);
-  const [selectedCategory, setSelectedCategory] = React.useState('');
-  const [categoryMenuVisible, setCategoryMenuVisible] = React.useState(false);
+  const [budgetName, setBudgetName] = React.useState('');
+  const [selectedIcon, setSelectedIcon] = React.useState(ICONS[0]);
+  const [selectedColor, setSelectedColor] = React.useState(PRESET_COLORS[0]);
   const [amount, setAmount] = React.useState('');
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
@@ -32,35 +37,50 @@ const BudgetScreen = ({ navigation }: any) => {
     }
   }, [dispatch, user?.accountId]);
 
+  const onRefresh = React.useCallback(async () => {
+    if (user?.accountId) {
+      setRefreshing(true);
+      await dispatch(fetchBudgets(user.accountId));
+      setRefreshing(false);
+    }
+  }, [dispatch, user?.accountId]);
+
   const showModal = (budget?: any) => {
     if (budget) {
-      setSelectedCategory(budget.category);
-      setAmount(budget.limit);
+      setEditingId(budget.id);
+      setBudgetName(budget.name);
+      setSelectedIcon(budget.icon || ICONS[0]);
+      setSelectedColor(budget.color || PRESET_COLORS[0]);
+      setAmount(Number(budget.limit).toString());
+    } else {
+      setEditingId(null);
+      setBudgetName('');
+      setSelectedIcon(ICONS[0]);
+      setSelectedColor(PRESET_COLORS[0]);
+      setAmount('');
     }
     setVisible(true);
   };
 
   const hideModal = () => {
     setVisible(false);
-    setAmount('');
-    setSelectedCategory('');
   };
 
-  const handleDeleteBudget = (id: string, category: string) => {
+  const handleDeleteBudget = (id: string, name: string) => {
     CustomAlert.alert(
         'Delete Budget',
         'BUDGET',
-        `Are you sure you want to delete the budget for ${category}?`,
+        `Are you sure you want to delete the budget for ${name}?`,
         () => {
             dispatch(removeBudget(id));
-            showSnackbar(`Budget deleted for ${category}`, 'success');
+            showSnackbar(`Budget deleted: ${name}`, 'success');
         }
     );
   };
 
   const handleSaveBudget = async () => {
-    if (!selectedCategory) {
-      showSnackbar('Please select a category', 'error');
+    if (!budgetName.trim()) {
+      showSnackbar('Please enter a budget name', 'error');
       return;
     }
     if (!amount || isNaN(parseFloat(amount))) {
@@ -73,31 +93,35 @@ const BudgetScreen = ({ navigation }: any) => {
       return;
     }
     
-    // Calculate current spent for this category
+    // Calculate current spent for this budget (matching by name for now, or just setting to 0 if new)
     const { expenses } = require('../../redux/store').store.getState().expenses;
-    const spent = expenses.filter((e: any) => e.category === selectedCategory).reduce((sum: number, e: any) => sum + e.amount, 0);
+    // Assuming expenses.budgetId will store the Budget ID
+    // If it's a new budget, spent is initially 0 or calculated by matching name (for migration)
+    const spent = expenses
+      .filter((e: any) => e.budgetId === editingId || e.budget === budgetName)
+      .reduce((sum: number, e: any) => sum + e.amount, 0);
 
-    const existingBudget = budgets.find(b => b.category === selectedCategory);
-    
     const budgetData = {
-      category: selectedCategory,
+      name: budgetName,
+      icon: selectedIcon,
+      color: selectedColor,
       limit: parseFloat(amount),
       spent: spent,
       user: user.accountId,
     };
 
     try {
-        if (existingBudget) {
-            const result = await dispatch(editBudget({ id: existingBudget.id, ...budgetData }));
+        if (editingId) {
+            const result = await dispatch(editBudget({ id: editingId, ...budgetData }));
             if (editBudget.fulfilled.match(result)) {
-                showSnackbar(`Budget updated for ${selectedCategory}`, 'success');
+                showSnackbar(`Budget updated successfully`, 'success');
             } else {
                 showSnackbar('Error - ' + (result.payload as string), 'error');
             }
         } else {
             const result = await dispatch(createBudget(budgetData));
             if (createBudget.fulfilled.match(result)) {
-                showSnackbar(`Budget set for ${selectedCategory}`, 'success');
+                showSnackbar(`Budget created successfully`, 'success');
             } else {
                 showSnackbar('Error - ' + (result.payload as string), 'error');
             }
@@ -152,19 +176,33 @@ const BudgetScreen = ({ navigation }: any) => {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.content}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>Category Budgets</Text>
+        <Text variant="titleMedium" style={styles.sectionTitle}>Budgets Overview</Text>
         
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+            />
+          }
+        >
           {budgets.length > 0 ? (
               budgets.map((budget, index) => {
-                  const category = categories.find(c => c.name === budget.category);
+                  const budgetName = budget.name;
+                  const budgetIcon = budget.icon || 'help-circle';
+                  const budgetColor = budget.color || theme.colors.primary;
+
                   const progress = budget.limit > 0 ? budget.spent / budget.limit : 0;
                   const isOver = progress > 1;
 
                    return (
-                      <Animated.View key={budget.category} entering={FadeInDown.delay(300 + index * 100)}>
+                      <Animated.View key={budget.id} entering={FadeInDown.delay(300 + index * 100)}>
                           <TouchableOpacity 
-                            onLongPress={() => handleDeleteBudget(budget.id, budget.category)}
+                            onLongPress={() => handleDeleteBudget(budget.id, budget.name)}
                             onPress={() => showModal(budget)}
                             activeOpacity={0.7}
                           >
@@ -172,10 +210,10 @@ const BudgetScreen = ({ navigation }: any) => {
                                 <Card.Content>
                                     <View style={styles.budgetHeader}>
                                         <View style={styles.catInfo}>
-                                            <View style={[styles.iconBox, { backgroundColor: (category?.color || theme.colors.primary) + '15' }]}>
-                                                <Ionicons name={(category?.icon || 'help-circle') as any} size={18} color={category?.color || theme.colors.primary} />
+                                            <View style={[styles.iconBox, { backgroundColor: budgetColor + '15' }]}>
+                                                <Ionicons name={budgetIcon as any} size={18} color={budgetColor} />
                                             </View>
-                                            <Text variant="titleMedium" style={styles.catName}>{budget.category}</Text>
+                                            <Text variant="titleMedium" style={styles.catName}>{budgetName}</Text>
                                         </View>
                                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                             <Text variant="bodySmall" style={isOver ? { color: theme.colors.error, fontWeight: 'bold' } : { opacity: 0.6 }}>
@@ -186,8 +224,8 @@ const BudgetScreen = ({ navigation }: any) => {
                                     
                                     <ProgressBar 
                                         progress={Math.min(progress, 1)} 
-                                        color={isOver ? theme.colors.error : (category?.color || theme.colors.primary)} 
-                                        style={styles.categoryProgress} 
+                                        color={isOver ? theme.colors.error : budgetColor} 
+                                        style={styles.budgetProgress} 
                                     />
                                     
                                     <View style={styles.budgetFooter}>
@@ -222,66 +260,70 @@ const BudgetScreen = ({ navigation }: any) => {
 
       <Portal>
         <Dialog visible={visible} onDismiss={hideModal} style={{ borderRadius: 24, backgroundColor: theme.colors.surface }}>
-          <Dialog.Title style={{ fontWeight: 'bold' }}>Set Category Budget</Dialog.Title>
+          <Dialog.Title style={{ fontWeight: 'bold' }}>{editingId ? 'Edit Budget' : 'Create New Budget'}</Dialog.Title>
           <Dialog.Content>
-            <View style={styles.pickerSection}>
-                <Text variant="labelLarge" style={styles.pickerLabel}>Category</Text>
-                <Menu
-                    visible={categoryMenuVisible}
-                    onDismiss={() => setCategoryMenuVisible(false)}
-                    contentStyle={{ borderRadius: 20 }}
-                    anchor={
-                        <TouchableOpacity 
-                            onPress={() => setCategoryMenuVisible(true)}
-                            style={[styles.pickerTrigger, { borderColor: theme.colors.outline }]}
-                        >
-                            <View style={styles.pickerValue}>
-                                {selectedCategory ? (
-                                    <>
-                                        <View style={[styles.iconBox, { backgroundColor: (categories.find(c => c.name === selectedCategory)?.color || theme.colors.primary) + '15', marginRight: 12 }]}>
-                                            <Ionicons 
-                                                name={(categories.find(c => c.name === selectedCategory)?.icon || 'help-circle') as any} 
-                                                size={18} 
-                                                color={categories.find(c => c.name === selectedCategory)?.color || theme.colors.primary} 
-                                            />
-                                        </View>
-                                        <Text variant="bodyLarge">{selectedCategory}</Text>
-                                    </>
-                                ) : (
-                                    <Text variant="bodyLarge" style={{ opacity: 0.5 }}>Select a category</Text>
-                                )}
-                            </View>
-                            <Ionicons name="chevron-down" size={20} color={theme.colors.onSurfaceVariant} />
-                        </TouchableOpacity>
-                    }
-                >
-                    {categories.map((cat) => (
-                        <Menu.Item 
-                            key={cat.id} 
-                            onPress={() => {
-                                setSelectedCategory(cat.name);
-                                setCategoryMenuVisible(false);
-                            }} 
-                            title={cat.name}
-                            leadingIcon={() => <Ionicons name={cat.icon as any} size={20} color={cat.color} />}
-                        />
-                    ))}
-                </Menu>
-            </View>
-            <TextInput
-              label="Budget Limit Amount"
-              mode="outlined"
-              keyboardType="numeric"
-              value={amount}
-              onChangeText={setAmount}
-              style={{ backgroundColor: 'transparent', marginTop: 16 }}
-              outlineStyle={{ borderRadius: 16 }}
-              left={<TextInput.Affix text="AED" />}
-            />
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
+              <TextInput
+                label="Budget Name"
+                mode="outlined"
+                value={budgetName}
+                onChangeText={setBudgetName}
+                style={[styles.input, { marginBottom: 12 }]}
+                outlineStyle={{ borderRadius: 16 }}
+                placeholder="e.g. Shopping, Rent"
+              />
+
+              <TextInput
+                label="Monthly Limit"
+                mode="outlined"
+                keyboardType="numeric"
+                value={amount}
+                onChangeText={setAmount}
+                style={styles.input}
+                outlineStyle={{ borderRadius: 16 }}
+                left={<TextInput.Affix text="AED" />}
+              />
+
+              <View style={styles.pickerSection}>
+                <Text variant="labelLarge" style={styles.pickerLabel}>Select Icon</Text>
+                <View style={styles.iconGrid}>
+                  {ICONS.map((icon) => (
+                    <TouchableOpacity
+                      key={icon}
+                      onPress={() => setSelectedIcon(icon)}
+                      style={[
+                        styles.iconOption,
+                        { backgroundColor: selectedIcon === icon ? selectedColor + '20' : 'transparent' },
+                        selectedIcon === icon && { borderColor: selectedColor, borderWidth: 2 }
+                      ]}
+                    >
+                      <Ionicons name={icon as any} size={24} color={selectedIcon === icon ? selectedColor : theme.colors.onSurfaceVariant} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.pickerSection}>
+                <Text variant="labelLarge" style={styles.pickerLabel}>Select Color</Text>
+                <View style={styles.colorGrid}>
+                  {PRESET_COLORS.map((color) => (
+                    <TouchableOpacity
+                      key={color}
+                      onPress={() => setSelectedColor(color)}
+                      style={[
+                        styles.colorOption,
+                        { backgroundColor: color },
+                        selectedColor === color && { borderColor: theme.colors.onSurface, borderWidth: 3 }
+                      ]}
+                    />
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
           </Dialog.Content>
           <Dialog.Actions style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
             <Button onPress={hideModal} textColor={theme.colors.onSurfaceVariant}>Cancel</Button>
-            <Button mode="contained" onPress={handleSaveBudget} style={{ borderRadius: 12 }}>Save</Button>
+            <Button mode="contained" onPress={handleSaveBudget} style={{ borderRadius: 12 }}>Save Budget</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -391,7 +433,7 @@ const styles = StyleSheet.create({
   catName: {
       fontWeight: '600',
   },
-  categoryProgress: {
+  budgetProgress: {
       height: 8,
       borderRadius: 4,
   },
@@ -434,6 +476,36 @@ const styles = StyleSheet.create({
   pickerValue: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  input: {
+    backgroundColor: 'transparent',
+  },
+  iconGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  iconOption: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  colorOption: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    marginBottom: 8,
+    marginHorizontal: 4,
   },
 });
 

@@ -1,22 +1,17 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import * as expenseService from "../../api/expenseService";
-import * as categoryService from "../../api/categoryService";
+import * as budgetService from "../../api/budgetService";
+import { updateLocalSpent } from "./budgetSlice";
+import { RootState } from "../store";
 
 interface Expense {
   id: string;
   title: string;
   amount: number;
-  category: string;
+  budgetId: string;
   date: string;
   image?: string;
   user: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
 }
 
 interface DateRange {
@@ -27,8 +22,6 @@ interface DateRange {
 interface ExpensesState {
   expenses: Expense[];
   filteredExpenses: Expense[];
-  categories: Category[];
-  selectedCategory: Category | null;
   dateRange: DateRange;
   loading: boolean;
   error: string | null;
@@ -37,8 +30,6 @@ interface ExpensesState {
 const initialState: ExpensesState = {
   expenses: [],
   filteredExpenses: [],
-  categories: [],
-  selectedCategory: null,
   dateRange: {
     start: new Date(new Date().setDate(1)).toISOString(), // First day of month
     end: new Date().toISOString(),
@@ -56,7 +47,7 @@ export const fetchExpenses = createAsyncThunk(
         id: doc.$id,
         title: doc.title,
         amount: doc.amount,
-        category: doc.category,
+        budgetId: doc.budget, // Mapping Appwrite's 'budget' field to our 'budgetId'
         date: doc.date,
         image: doc.image,
         user: doc.user,
@@ -69,13 +60,32 @@ export const fetchExpenses = createAsyncThunk(
 
 export const createExpense = createAsyncThunk(
   "expenses/create",
-  async (data: Omit<Expense, "id">, { rejectWithValue }) => {
+  async (data: Omit<Expense, "id">, { dispatch, getState, rejectWithValue }) => {
     try {
-      const doc = await expenseService.addExpense(data);
-      return {
+      // Map budgetId to Appwrite's 'budget' field
+      const apiData = {
+        ...data,
+        budget: data.budgetId,
+      };
+      // @ts-ignore
+      delete apiData.budgetId;
+
+      const doc = await expenseService.addExpense(apiData);
+      const expense = {
         id: doc.$id,
         ...data,
       };
+
+      // Update budget spent
+      const state = getState() as RootState;
+      const budget = state.budget.budgets.find((b) => b.id === data.budgetId);
+      if (budget) {
+        const newSpent = (budget.spent || 0) + data.amount;
+        await budgetService.updateBudget(budget.id, { spent: newSpent });
+        dispatch(updateLocalSpent({ id: budget.id, spent: newSpent }));
+      }
+
+      return expense;
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -86,14 +96,60 @@ export const editExpense = createAsyncThunk(
   "expenses/edit",
   async (
     { id, ...data }: { id: string } & Partial<Expense>,
-    { rejectWithValue },
+    { dispatch, getState, rejectWithValue },
   ) => {
     try {
-      const doc = await expenseService.updateExpense(id, data);
-      return {
+      const state = getState() as RootState;
+      const oldExpense = state.expenses.expenses.find((e) => e.id === id);
+      
+      // Map budgetId to Appwrite's 'budget' field if it exists in the update
+      const apiData = { ...data };
+      if (apiData.budgetId) {
+        (apiData as any).budget = apiData.budgetId;
+        delete apiData.budgetId;
+      }
+
+      const doc = await expenseService.updateExpense(id, apiData);
+      const updatedExpense = {
         id: doc.$id,
         ...data,
       };
+
+      // Update budget spent logic
+      if (oldExpense) {
+        const budgets = state.budget.budgets;
+        
+        // Scenario 1: Budget changed
+        if (data.budgetId && data.budgetId !== oldExpense.budgetId) {
+          // Subtract from old budget
+          const oldBudget = budgets.find(b => b.id === oldExpense.budgetId);
+          if (oldBudget) {
+            const newSpentOld = Math.max(0, (oldBudget.spent || 0) - oldExpense.amount);
+            await budgetService.updateBudget(oldBudget.id, { spent: newSpentOld });
+            dispatch(updateLocalSpent({ id: oldBudget.id, spent: newSpentOld }));
+          }
+          
+          // Add to new budget
+          const newBudget = budgets.find(b => b.id === data.budgetId);
+          if (newBudget) {
+            const amountToUse = data.amount !== undefined ? data.amount : oldExpense.amount;
+            const newSpentNew = (newBudget.spent || 0) + amountToUse;
+            await budgetService.updateBudget(newBudget.id, { spent: newSpentNew });
+            dispatch(updateLocalSpent({ id: newBudget.id, spent: newSpentNew }));
+          }
+        } 
+        // Scenario 2: Amount changed, but budget is same
+        else if (data.amount !== undefined && data.amount !== oldExpense.amount) {
+          const budget = budgets.find(b => b.id === (data.budgetId || oldExpense.budgetId));
+          if (budget) {
+            const newSpent = (budget.spent || 0) - oldExpense.amount + data.amount;
+            await budgetService.updateBudget(budget.id, { spent: newSpent });
+            dispatch(updateLocalSpent({ id: budget.id, spent: newSpent }));
+          }
+        }
+      }
+
+      return updatedExpense;
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -102,27 +158,24 @@ export const editExpense = createAsyncThunk(
 
 export const removeExpense = createAsyncThunk(
   "expenses/remove",
-  async (id: string, { rejectWithValue }) => {
+  async (id: string, { dispatch, getState, rejectWithValue }) => {
     try {
-      await expenseService.deleteExpense(id);
-      return id;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
-  },
-);
+      const state = getState() as RootState;
+      const expense = state.expenses.expenses.find((e) => e.id === id);
 
-export const fetchCategories = createAsyncThunk(
-  "expenses/fetchCategories",
-  async (_, { rejectWithValue }) => {
-    try {
-      const docs = await categoryService.getCategories();
-      return docs.map((doc: any) => ({
-        id: doc.$id,
-        name: doc.name,
-        icon: doc.icon,
-        color: doc.color,
-      }));
+      await expenseService.deleteExpense(id);
+
+      // Update budget spent
+      if (expense) {
+        const budget = state.budget.budgets.find(b => b.id === expense.budgetId);
+        if (budget) {
+          const newSpent = Math.max(0, (budget.spent || 0) - expense.amount);
+          await budgetService.updateBudget(budget.id, { spent: newSpent });
+          dispatch(updateLocalSpent({ id: budget.id, spent: newSpent }));
+        }
+      }
+
+      return id;
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -135,9 +188,6 @@ const expensesSlice = createSlice({
   reducers: {
     setFilteredExpenses: (state, action: PayloadAction<Expense[]>) => {
       state.filteredExpenses = action.payload;
-    },
-    setSelectedCategory: (state, action: PayloadAction<Category | null>) => {
-      state.selectedCategory = action.payload;
     },
     setDateRange: (state, action: PayloadAction<DateRange>) => {
       state.dateRange = action.payload;
@@ -174,7 +224,9 @@ const expensesSlice = createSlice({
       )
       // Edit
       .addCase(editExpense.fulfilled, (state, action: PayloadAction<any>) => {
-        const index = state.expenses.findIndex((e) => e.id === action.payload.id);
+        const index = state.expenses.findIndex(
+          (e) => e.id === action.payload.id,
+        );
         if (index !== -1) {
           state.expenses[index] = {
             ...state.expenses[index],
@@ -184,24 +236,22 @@ const expensesSlice = createSlice({
         }
       })
       // Remove
-      .addCase(removeExpense.fulfilled, (state, action: PayloadAction<string>) => {
-        state.expenses = state.expenses.filter((e) => e.id !== action.payload);
-        state.filteredExpenses = state.filteredExpenses.filter(
-          (e) => e.id !== action.payload,
-        );
-      })
-      // Categories
-      .addCase(fetchCategories.fulfilled, (state, action: PayloadAction<Category[]>) => {
-        state.categories = action.payload;
-      });
+      .addCase(
+        removeExpense.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.expenses = state.expenses.filter(
+            (e) => e.id !== action.payload,
+          );
+          state.filteredExpenses = state.filteredExpenses.filter(
+            (e) => e.id !== action.payload,
+          );
+        },
+      );
   },
 });
 
-export const {
-  setFilteredExpenses,
-  setSelectedCategory,
-  setDateRange,
-  clearError,
-} = expensesSlice.actions;
+export const { setFilteredExpenses, setDateRange, clearError } =
+  expensesSlice.actions;
 export default expensesSlice.reducer;
 export type { Expense, ExpensesState };
+

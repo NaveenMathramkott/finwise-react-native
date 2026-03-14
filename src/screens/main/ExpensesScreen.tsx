@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Keyboard, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { FlatList, ScrollView } from 'react-native-gesture-handler';
-import { Chip, FAB, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-
-import SwipeableExpenseCard from '../../components/expenses/SwipeableExpenseCard';
+import ExpenseCard from '../../components/expenses/ExpenseCard';
+import TransactionDetailSheet from '../../components/expenses/TransactionDetailSheet';
 import { fetchExpenses, removeExpense } from '../../redux/slices/expensesSlice';
 import { RootState, useAppDispatch, useAppSelector } from '../../redux/store';
 import { CustomAlert } from '../../utils/AlertService';
+import { Button, Chip, FAB, Portal, Searchbar, Surface, Text, useTheme } from 'react-native-paper';
 
 const PAGE_SIZE = 10;
 
@@ -16,6 +16,7 @@ const ExpensesScreen = ({ navigation }: any) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const { expenses, loading } = useAppSelector((state: RootState) => state.expenses);
+  const { budgets } = useAppSelector((state: RootState) => state.budget);
   const { user } = useAppSelector((state: RootState) => state.auth);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,14 +24,18 @@ const ExpensesScreen = ({ navigation }: any) => {
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [sortBy, setSortBy] = useState('latest');
+  
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  const [detailVisible, setDetailVisible] = useState(false);
 
-  const currentOpenSwipeable = useRef<any>(null);
+  const hideModal = () => {
+    setDetailVisible(false);
+    setSelectedExpense(null);
+  };
 
-  const closeOpenSwipeable = () => {
-    if (currentOpenSwipeable.current?.close) {
-      currentOpenSwipeable.current.close();
-      currentOpenSwipeable.current = null;
-    }
+  const showDetail = (expense: any) => {
+    setSelectedExpense(expense);
+    setDetailVisible(true);
   };
 
   const totalThisMonth = expenses.reduce((sum, exp) => {
@@ -50,11 +55,12 @@ const ExpensesScreen = ({ navigation }: any) => {
 
   // Initial load, search filtering and sorting
   useEffect(() => {
-    closeOpenSwipeable();
-    let filtered = expenses.filter(exp => 
-      exp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      exp.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    let filtered = expenses.filter(exp => {
+      const budget = budgets.find(b => b.id === exp.budgetId);
+      const budgetName = budget?.name || '';
+      return exp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             budgetName.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     // Sorting logic
     switch (sortBy) {
@@ -79,10 +85,12 @@ const ExpensesScreen = ({ navigation }: any) => {
   const loadMore = useCallback(() => {
     if (loadingMore) return;
     
-    let filtered = expenses.filter(exp => 
-      exp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      exp.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    let filtered = expenses.filter(exp => {
+      const budget = budgets.find(b => b.id === exp.budgetId);
+      const budgetName = budget?.name || '';
+      return exp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             budgetName.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     // Apply same sorting
     switch (sortBy) {
@@ -113,7 +121,7 @@ const ExpensesScreen = ({ navigation }: any) => {
   }, [displayedExpenses, expenses, page, loadingMore, searchQuery, sortBy]);
 
   const handleDelete = (id: string) => {
-    closeOpenSwipeable();
+    hideModal();
     CustomAlert.alert(
       'Delete Expense',
       'EXPENSE',
@@ -123,15 +131,8 @@ const ExpensesScreen = ({ navigation }: any) => {
   };
 
   const handleEdit = (expense: any) => {
-    closeOpenSwipeable();
+    hideModal();
     navigation.navigate('AddExpense', { expense });
-  };
-
-  const onSwipeableWillOpen = (ref: any) => {
-    if (currentOpenSwipeable.current && currentOpenSwipeable.current !== ref) {
-      currentOpenSwipeable.current.close?.();
-    }
-    currentOpenSwipeable.current = ref;
   };
 
   const renderFooter = () => {
@@ -159,7 +160,6 @@ const ExpensesScreen = ({ navigation }: any) => {
             </View>
             <TouchableOpacity 
               onPress={() => {
-                closeOpenSwipeable();
                 navigation.navigate('Budget');
               }}
               style={[styles.iconContainer, { backgroundColor: theme.colors.primary + '15' }]}
@@ -171,10 +171,8 @@ const ExpensesScreen = ({ navigation }: any) => {
           <Searchbar
             placeholder="Search transactions..."
             onChangeText={(text) => {
-              closeOpenSwipeable();
               setSearchQuery(text);
             }}
-            onFocus={closeOpenSwipeable}
             value={searchQuery}
             style={styles.searchBar}
             elevation={0}
@@ -195,7 +193,6 @@ const ExpensesScreen = ({ navigation }: any) => {
                   key={item.value}
                   selected={sortBy === item.value} 
                   onPress={() => {
-                    closeOpenSwipeable();
                     setSortBy(item.value);
                   }}
                   style={[styles.chip, sortBy === item.value && { backgroundColor: theme.colors.primary }]}
@@ -218,18 +215,13 @@ const ExpensesScreen = ({ navigation }: any) => {
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           onScrollBeginDrag={() => {
-            closeOpenSwipeable();
             Keyboard.dismiss();
           }}
-          onTouchStart={closeOpenSwipeable}
           renderItem={({ item, index }) => (
             <Animated.View entering={FadeInDown.delay(300 + index * 50)}>
-                <SwipeableExpenseCard 
-                  expense={item} 
-                  onDelete={handleDelete} 
-                  onEdit={handleEdit} 
-                  onSwipeableWillOpen={(ref) => onSwipeableWillOpen(ref)}
-                />
+                <TouchableOpacity onPress={() => showDetail(item)}>
+                    <ExpenseCard expense={item} paddingHoz={20} />
+                </TouchableOpacity>
             </Animated.View>
           )}
           onEndReached={loadMore}
@@ -249,13 +241,20 @@ const ExpensesScreen = ({ navigation }: any) => {
 
       <FAB
         icon="plus"
-        // label=""
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         color="white"
         onPress={() => {
-          closeOpenSwipeable();
           navigation.navigate('AddExpense');
         }}
+      />
+
+      <TransactionDetailSheet 
+        visible={detailVisible}
+        onDismiss={hideModal}
+        expense={selectedExpense}
+        budgets={budgets}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </View>
   );

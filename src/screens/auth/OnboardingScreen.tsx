@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
 import {
  Animated,
  FlatList,
+ Image,
  StyleSheet,
  TouchableOpacity,
  View,
@@ -11,12 +11,15 @@ import {
 import { Button, Text as PaperText, Surface, useTheme } from 'react-native-paper';
 import Reanimated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import image_01 from '../../../assets/image_01.jpg';
+import image_02 from '../../../assets/image_02.jpg';
+import image_03 from '../../../assets/image_03.jpg';
 
 interface OnboardingSlide {
   id: string;
   title: string;
   subtitle: string;
-  iconName: keyof typeof Ionicons.glyphMap;
+  iconName: string;
 }
 
 const slides: OnboardingSlide[] = [
@@ -24,19 +27,19 @@ const slides: OnboardingSlide[] = [
     id: '1',
     title: 'Smart Budgeting',
     subtitle: 'Take control of your finances with ease and precision.',
-    iconName: 'pie-chart',
+    iconName: image_01,
   },
   {
     id: '2',
     title: 'Expense Tracking',
     subtitle: 'Track every penny and see exactly where your money goes.',
-    iconName: 'receipt',
+    iconName: image_02,
   },
   {
     id: '3',
     title: 'AI Insights',
     subtitle: 'Get personalized financial advice from our smart AI assistant.',
-    iconName: 'sparkles',
+    iconName: image_03,
   },
 ];
 
@@ -185,7 +188,7 @@ const OnboardingScreen = ({ navigation }: any) => {
                         style={styles.iconWrapper}
                     >
                         <Surface style={styles.iconSurface} elevation={4}>
-                            <Ionicons name={item.iconName} size={100} color={theme.colors.primary} />
+                            <Image source={item.iconName} style={styles.imageStyle}  />
                         </Surface>
                     </Reanimated.View>
                     
@@ -222,6 +225,13 @@ const styles = StyleSheet.create({
       borderBottomLeftRadius: 20,
       borderBottomRightRadius: 20,
   },
+  imageStyle:{
+    width: 360,
+    height: 400,
+    borderRadius: 30,
+    resizeMode: 'cover',
+  },
+
   slide: {
     flex: 1,
     alignItems: 'center',

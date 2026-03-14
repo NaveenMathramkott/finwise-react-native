@@ -9,7 +9,11 @@ import { RootStackParamList } from './types';
 const Stack = createStackNavigator<RootStackParamList>();
 
 const AppNavigator = () => {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated,loading } = useSelector((state: RootState) => state.auth);
+
+  // if(loading){
+  //   return <LoadingScreen />
+  // }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
