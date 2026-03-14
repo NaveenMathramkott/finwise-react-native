@@ -39,23 +39,40 @@ export const sendMessage = createAsyncThunk(
     { question, userId }: { question: string; userId: string },
     { rejectWithValue },
   ) => {
-    // try {
-    //   const response = await mockAiResponse(question);
-    //   return { question, answer: response };
-    // } catch (error: any) {
-    //   return rejectWithValue(error.message || "Failed to get AI response");
-    // }
-    // Having higher pricing for the ai model, disabled for now
-    // Remove or comment out this block when AI function is ready
-    return new Promise<{ question: string; answer: string }>((resolve) => {
-      setTimeout(() => {
-        resolve({
-          question,
-          answer:
-            "That's a great question! Based on your current budget data, you've spent 45% of your 'Groceries' budget this month. You have AED 550.00 remaining for the next two weeks. Stay consistent to reach your savings goal! 📈",
-        });
-      }, 1500);
-    });
+    try {
+      const functionId = process.env.EXPO_PUBLIC_FUNCTION_ID!;
+
+      const response = await functions.createExecution(
+        functionId,
+        JSON.stringify({ question }),
+      );
+
+      // Handle empty or error response body gracefully
+      let aiResult;
+      try {
+        aiResult = response.responseBody
+          ? JSON.parse(response.responseBody)
+          : null;
+        console.log("AI Response:", aiResult);
+      } catch (parseError) {
+        console.error("Failed to parse response body:", response.responseBody);
+        return rejectWithValue("Failed to parse AI response");
+      }
+
+      if (aiResult && aiResult.success) {
+        return { question, answer: aiResult.data };
+      } else {
+        const errorMessage =
+          aiResult?.message ||
+          aiResult?.question ||
+          response.errors ||
+          "Function returned an invalid response";
+        return rejectWithValue(errorMessage);
+      }
+    } catch (error: any) {
+      console.error("Appwrite Execution Error:", error);
+      return rejectWithValue(error.message || "Failed to get AI response");
+    }
   },
 );
 
@@ -72,23 +89,6 @@ const aiSlice = createSlice({
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
-    },
-    updateMessage: (
-      state,
-      action: PayloadAction<{ id: string; answer?: string; error?: string }>,
-    ) => {
-      const messageIndex = state.messages.findIndex(
-        (m) => m.id === action.payload.id,
-      );
-      if (messageIndex !== -1) {
-        if (action.payload.answer) {
-          state.messages[messageIndex].answer = action.payload.answer;
-        }
-        if (action.payload.error) {
-          state.messages[messageIndex].error = action.payload.error;
-        }
-        state.messages[messageIndex].sender = "ai";
-      }
     },
   },
   extraReducers: (builder) => {
@@ -139,8 +139,7 @@ const aiSlice = createSlice({
   },
 });
 
-export const { addMessage, clearChat, setLoading, updateMessage } =
-  aiSlice.actions;
+export const { addMessage, clearChat, setLoading } = aiSlice.actions;
 
 export default aiSlice.reducer;
 export type { AIState, Message };
