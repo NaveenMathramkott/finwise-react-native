@@ -39,8 +39,14 @@ export default async ({ req, res, log, error }) => {
     );
 
     const data = await response.json();
-    console.log("ai response",data);
-    context.log("ai response",data);
+    log("Gemini API Full Response:");
+    log(JSON.stringify(data));
+    
+    // Add specific error checking to help debug from Appwrite console
+    if (data.error) {
+      error(`Gemini Data Error: ${JSON.stringify(data.error)}`);
+    }
+
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
 
     return res.json({ success: true, data: aiResponse });
