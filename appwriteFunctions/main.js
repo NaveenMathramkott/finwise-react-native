@@ -6,14 +6,14 @@ export default async ({ req, res, log, error }) => {
  console.log("GEMINI_API_KEY",GEMINI_API_KEY);
   if (!GEMINI_API_KEY) {
     error("Gemini API key is not configured.");
-    return res.json({ success: false, message: 'Server configuration error.' }, 500);
+    return res.json({ success: false, question: 'Server configuration error.' }, 500);
   }
 
   try {
-    const { message } = req.body;
+    const { question } = req.body;
 
-    if (!message) {
-      return res.json({ success: false, message: 'Message is required.' }, 400);
+    if (!question) {
+      return res.json({ success: false, question: 'question is required.' }, 400);
     }
 
     const response = await fetch(
@@ -22,7 +22,7 @@ export default async ({ req, res, log, error }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: message }] }],
+          contents: [{ parts: [{ text: question }] }],
         }),
       }
     );
@@ -33,7 +33,7 @@ export default async ({ req, res, log, error }) => {
     return res.json({ success: true, data: aiResponse });
 
   } catch (err) {
-    error("Error calling Gemini API: " + err.message);
-    return res.json({ success: false, message: 'Failed to fetch AI response.' }, 500);
+    error("Error calling Gemini API: " + err.question);
+    return res.json({ success: false, question: 'Failed to fetch AI response.' }, 500);
   }
 };
