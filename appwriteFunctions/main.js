@@ -38,7 +38,7 @@ export default async ({ req, res, log, error }) => {
           'X-Title': 'FinWise'
         },
         body: JSON.stringify({
-          model: 'deepseek/deepseek-r1:free', // Using DeepSeek R1 free tier
+          model: 'google/gemma-3-27b-it:free', // Use the massively available Google Gemma 3 27B from the free OpenRouter tier
           messages: [
             {
               role: 'system',
