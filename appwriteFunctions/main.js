@@ -2,18 +2,29 @@ import fetch from 'node-fetch';
 
 // This function will run on the Appwrite server
 export default async ({ req, res, log, error }) => {
- const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
- console.log("GEMINI_API_KEY",GEMINI_API_KEY);
+  // Extract environment variable specifically during function execution
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
+  
   if (!GEMINI_API_KEY) {
     error("Gemini API key is not configured.");
-    return res.json({ success: false, message: 'Server configuration error.' }, 500);
+    return res.json({ success: false, question: 'Server configuration error.' }, 500);
   }
 
   try {
-    const { message } = req.body;
+    // Appwrite sends body as an object or a string depending on how it was triggered
+    let payload = req.body;
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload);
+      } catch (e) {
+        log("Body was not valid JSON string.");
+      }
+    }
 
-    if (!message) {
-      return res.json({ success: false, message: 'Message is required.' }, 400);
+    const question = payload.question;
+
+    if (!question) {
+      return res.json({ success: false, message: 'question is required.' }, 400);
     }
 
     const response = await fetch(
@@ -22,7 +33,7 @@ export default async ({ req, res, log, error }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: message }] }],
+          contents: [{ parts: [{ text: question }] }],
         }),
       }
     );
@@ -33,7 +44,7 @@ export default async ({ req, res, log, error }) => {
     return res.json({ success: true, data: aiResponse });
 
   } catch (err) {
-    error("Error calling Gemini API: " + err.message);
-    return res.json({ success: false, message: 'Failed to fetch AI response.' }, 500);
+    error("Error calling Gemini API: " + err.question);
+    return res.json({ success: false, question: 'Failed to fetch AI response.' }, 500);
   }
 };
