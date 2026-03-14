@@ -12,6 +12,7 @@ export async function getBudgets(accountId: string) {
     const response = await databases.listDocuments(databaseId, collectionId, [
       Query.equal("user", accountId),
     ]);
+
     return response.documents;
   } catch (error: any) {
     console.error("Get budgets error:", error);

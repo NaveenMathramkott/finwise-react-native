@@ -9,6 +9,7 @@ import {
  TouchableOpacity,
  View
 } from 'react-native';
+import { Client, Functions } from 'react-native-appwrite';
 import { ScrollView } from 'react-native-gesture-handler';
 import {
  ActivityIndicator,
@@ -20,9 +21,16 @@ import {
 } from 'react-native-paper';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearChat, sendMessage } from '../../redux/slices/aiSlice';
+import { addMessage, clearChat, setLoading, updateMessage } from '../../redux/slices/aiSlice';
 import { RootState } from '../../redux/store';
 import { CustomAlert } from '../../utils/AlertService';
+
+// 1. Initialize Appwrite client
+const client = new Client()
+    .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1')
+    .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || '');
+
+const functions = new Functions(client);
 
 const AIAssistantScreen = ({ navigation }: any) => {
   const theme = useTheme();
@@ -47,18 +55,61 @@ const AIAssistantScreen = ({ navigation }: any) => {
     setInputText('');
     Keyboard.dismiss();
 
+    const requestId = Date.now().toString();
+
+    // 1. Optimistic UI: Add user's question to the chat list immediately
+    dispatch(addMessage({
+      id: requestId,
+      question: question,
+      sender: 'user',
+      timestamp: new Date().toISOString()
+    }));
+    
+    // Set loading indicator on
+    dispatch(setLoading(true));
+
     try {
-      // @ts-ignore
-      const result = await dispatch(sendMessage({ 
-        question, 
-        userId: user.id 
-      }));
-      
-      if (sendMessage.rejected.match(result)) {
-        CustomAlert.alert('Error', 'AI_ASSISTANT', result.payload as string);
+      // 2. Execute Appwrite Function
+      const response = await functions.createExecution(
+        process.env.EXPO_PUBLIC_FUNCTION_ID!, 
+        JSON.stringify({ question: question })
+      );
+
+      // Handle empty or error response body gracefully
+      let aiResult;
+      try {
+        aiResult = response.responseBody ? JSON.parse(response.responseBody) : null;
+      } catch (parseError) {
+        console.error('Failed to parse response body:', response.responseBody);
+        aiResult = null;
       }
-    } catch (error) {
-      CustomAlert.alert('Error', 'SYSTEM', 'Failed to send message');
+      console.log("ai response",aiResult)
+      if (aiResult && aiResult.success) {
+        console.log('AI says:', aiResult.data);
+        // Update the existing placeholder question with AI response
+        dispatch(updateMessage({
+          id: requestId,
+          answer: aiResult.data
+        }));
+      } else {
+        const errorMessage = aiResult?.message || response.errors || 'Function returned an invalid response';
+        console.error('Function error:', errorMessage);
+        dispatch(updateMessage({
+          id: requestId,
+          error: errorMessage
+        }));
+        CustomAlert.alert('Error', 'AI_ASSISTANT', errorMessage);
+      }
+    } catch (error: any) {
+      console.error('Failed to call Appwrite function:', error);
+      dispatch(updateMessage({
+        id: requestId,
+        error: error.message || 'Failed to send message'
+      }));
+      CustomAlert.alert('Error', 'SYSTEM', 'Failed to connect to AI');
+    } finally {
+      // Clear loading state
+      dispatch(setLoading(false));
     }
   };
 

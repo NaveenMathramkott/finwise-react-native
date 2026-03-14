@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import React, { useEffect } from 'react';
-import { fetchCategories } from '../redux/slices/expensesSlice';
 import { useAppDispatch } from '../redux/store';
 import AddExpenseScreen from '../screens/expense/AddExpenseScreen';
 import BudgetScreen from '../screens/expense/BudgetScreen';
@@ -55,7 +54,7 @@ const MainTabNavigator = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    dispatch(fetchCategories());
+    // Categories are now part of budgets, which are fetched in their respective screens if needed
   }, [dispatch]);
 
   return (

@@ -3,7 +3,9 @@ import * as budgetService from "../../api/budgetService";
 
 interface Budget {
   id: string;
-  category: string;
+  name: string;
+  icon: string;
+  color: string;
   limit: number;
   spent: number;
   user: string;
@@ -28,7 +30,9 @@ export const fetchBudgets = createAsyncThunk(
       const docs = await budgetService.getBudgets(accountId);
       return docs.map((doc: any) => ({
         id: doc.$id,
-        category: doc.category,
+        name: doc.name,
+        icon: doc.icon,
+        color: doc.color,
         limit: doc.limit,
         spent: doc.spent,
         user: doc.user,
@@ -91,6 +95,12 @@ const budgetSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    updateLocalSpent: (state, action: PayloadAction<{ id: string; spent: number }>) => {
+      const budget = state.budgets.find(b => b.id === action.payload.id);
+      if (budget) {
+        budget.spent = action.payload.spent;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -108,11 +118,16 @@ const budgetSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(createBudget.fulfilled, (state, action: PayloadAction<Budget>) => {
-        state.budgets.push(action.payload);
-      })
+      .addCase(
+        createBudget.fulfilled,
+        (state, action: PayloadAction<Budget>) => {
+          state.budgets.push(action.payload);
+        },
+      )
       .addCase(editBudget.fulfilled, (state, action: PayloadAction<any>) => {
-        const index = state.budgets.findIndex((b) => b.id === action.payload.id);
+        const index = state.budgets.findIndex(
+          (b) => b.id === action.payload.id,
+        );
         if (index !== -1) {
           state.budgets[index] = {
             ...state.budgets[index],
@@ -120,12 +135,16 @@ const budgetSlice = createSlice({
           };
         }
       })
-      .addCase(removeBudget.fulfilled, (state, action: PayloadAction<string>) => {
-        state.budgets = state.budgets.filter((b) => b.id !== action.payload);
-      });
+      .addCase(
+        removeBudget.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.budgets = state.budgets.filter((b) => b.id !== action.payload);
+        },
+      );
   },
 });
 
-export const { clearError } = budgetSlice.actions;
+export const { clearError, updateLocalSpent } = budgetSlice.actions;
 export default budgetSlice.reducer;
 export type { Budget, BudgetState };
+

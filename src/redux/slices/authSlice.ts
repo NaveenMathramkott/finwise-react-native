@@ -87,7 +87,8 @@ export const checkAuthStatus = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const user = await authService.getCurrentUser();
-      const userProfile = await authService.getCurrentUserProfile(user?.$id);
+      if (!user?.$id) return null;
+      const userProfile = await authService.getCurrentUserProfile(user.$id);
       return userProfile;
     } catch (error: any) {
       return rejectWithValue(error.message);

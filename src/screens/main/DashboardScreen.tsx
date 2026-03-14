@@ -12,13 +12,16 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import SpendingPieChart from '../../components/charts/SpendingPieChart';
 import TrendLineChart from '../../components/charts/TrendLineChart';
 import ExpenseCard from '../../components/expenses/ExpenseCard';
-import { fetchExpenses } from '../../redux/slices/expensesSlice';
+import TransactionDetailSheet from '../../components/expenses/TransactionDetailSheet';
+import { fetchExpenses, removeExpense } from '../../redux/slices/expensesSlice';
 import { RootState, useAppDispatch, useAppSelector } from '../../redux/store';
+import { CustomAlert } from '../../utils/AlertService';
 
 const DashboardScreen = ({ navigation }: any) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const { expenses, categories } = useAppSelector((state: RootState) => state.expenses);
+  const { expenses } = useAppSelector((state: RootState) => state.expenses);
+  const { budgets } = useAppSelector((state: RootState) => state.budget);
   const { user } = useAppSelector((state: RootState) => state.auth);
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -44,6 +47,34 @@ const DashboardScreen = ({ navigation }: any) => {
      }
      setRefreshing(false);
   }, []);
+
+  const [selectedExpense, setSelectedExpense] = React.useState<any>(null);
+  const [detailVisible, setDetailVisible] = React.useState(false);
+
+  const hideModal = () => {
+    setDetailVisible(false);
+    setSelectedExpense(null);
+  };
+
+  const showDetail = (expense: any) => {
+    setSelectedExpense(expense);
+    setDetailVisible(true);
+  };
+
+  const handleDelete = (id: string) => {
+    hideModal();
+    CustomAlert.alert(
+      'Delete Expense',
+      'EXPENSE',
+      'Are you sure you want to delete this expense permanent?',
+      () => dispatch(removeExpense(id))
+    );
+  };
+
+  const handleEdit = (expense: any) => {
+    hideModal();
+    navigation.navigate('AddExpense', { expense });
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -114,7 +145,7 @@ const DashboardScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
             </View>
             <View style={styles.chartWrapper}>
-              <SpendingPieChart expenses={expenses} categories={categories} />
+              <SpendingPieChart expenses={expenses} budgets={budgets} />
             </View>
           </Card>
 
@@ -139,7 +170,9 @@ const DashboardScreen = ({ navigation }: any) => {
             {recentExpenses.length > 0 ? (
               recentExpenses.map((expense, index) => (
                 <Animated.View key={expense.id} entering={FadeInDown.delay(300 + index * 100)}>
-                 <ExpenseCard expense={expense} paddingHoz={0} />
+                  <TouchableOpacity onPress={() => showDetail(expense)}>
+                    <ExpenseCard expense={expense} paddingHoz={0} />
+                  </TouchableOpacity>
                 </Animated.View>
               ))
             ) : (
@@ -173,6 +206,15 @@ const DashboardScreen = ({ navigation }: any) => {
           </View>
         </Animated.View>
       </ScrollView>
+
+      <TransactionDetailSheet 
+        visible={detailVisible}
+        onDismiss={hideModal}
+        expense={selectedExpense}
+        budgets={budgets}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </View>
   );
 };
