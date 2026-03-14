@@ -38,7 +38,7 @@ export default async ({ req, res, log, error }) => {
           'X-Title': 'FinWise'
         },
         body: JSON.stringify({
-          model: 'qwen/qwen3-coder:free', // Using the free Qwen Coder model
+          model: 'meta-llama/llama-3.2-3b-instruct:free', // Using LLaMA 3.2 because others are getting Provider Rate Limits
           messages: [
             {
               role: 'system',
