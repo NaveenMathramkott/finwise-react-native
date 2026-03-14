@@ -2,18 +2,29 @@ import fetch from 'node-fetch';
 
 // This function will run on the Appwrite server
 export default async ({ req, res, log, error }) => {
- const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
- console.log("GEMINI_API_KEY",GEMINI_API_KEY);
+  // Extract environment variable specifically during function execution
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
+  
   if (!GEMINI_API_KEY) {
     error("Gemini API key is not configured.");
     return res.json({ success: false, question: 'Server configuration error.' }, 500);
   }
 
   try {
-    const { question } = req.body;
-context.log("body-parsed",req.body)
+    // Appwrite sends body as an object or a string depending on how it was triggered
+    let payload = req.body;
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload);
+      } catch (e) {
+        log("Body was not valid JSON string.");
+      }
+    }
+
+    const question = payload.question;
+
     if (!question) {
-      return res.json({ success: false, question: 'question is required.' }, 400);
+      return res.json({ success: false, message: 'question is required.' }, 400);
     }
 
     const response = await fetch(
