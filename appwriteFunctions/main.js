@@ -11,7 +11,7 @@ export default async ({ req, res, log, error }) => {
 
   try {
     const { question } = req.body;
-
+context.log("body-parsed",req.body)
     if (!question) {
       return res.json({ success: false, question: 'question is required.' }, 400);
     }
