@@ -38,7 +38,7 @@ export default async ({ req, res, log, error }) => {
           'X-Title': 'FinWise'
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-lite-preview-02-05:free', // You can change this to any OpenRouter model
+          model: 'google/gemini-2.0-flash-exp:free', // Using the stable experimental free Flash model
           messages: [
             {
               role: 'system',
