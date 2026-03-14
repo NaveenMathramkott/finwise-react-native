@@ -38,7 +38,7 @@ export default async ({ req, res, log, error }) => {
           'X-Title': 'FinWise'
         },
         body: JSON.stringify({
-          model: 'meta-llama/llama-3.2-3b-instruct:free', // Using LLaMA 3.2 because others are getting Provider Rate Limits
+          model: 'deepseek/deepseek-r1:free', // Using DeepSeek R1 free tier
           messages: [
             {
               role: 'system',
