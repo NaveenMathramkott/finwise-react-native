@@ -84,6 +84,18 @@ const aiSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
+    updateMessage: (state, action: PayloadAction<{id: string, answer?: string, error?: string}>) => {
+      const messageIndex = state.messages.findIndex(m => m.id === action.payload.id);
+      if (messageIndex !== -1) {
+        if (action.payload.answer) {
+          state.messages[messageIndex].answer = action.payload.answer;
+        }
+        if (action.payload.error) {
+          state.messages[messageIndex].error = action.payload.error;
+        }
+        state.messages[messageIndex].sender = "ai";
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -133,7 +145,7 @@ const aiSlice = createSlice({
   },
 });
 
-export const { addMessage, clearChat, setLoading } = aiSlice.actions;
+export const { addMessage, clearChat, setLoading, updateMessage } = aiSlice.actions;
 
 export default aiSlice.reducer;
 export type { AIState, Message };
