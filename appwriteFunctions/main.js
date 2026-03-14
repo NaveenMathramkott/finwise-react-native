@@ -39,6 +39,8 @@ export default async ({ req, res, log, error }) => {
     );
 
     const data = await response.json();
+    console.log("ai response",data);
+    context.log("ai response",data);
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
 
     return res.json({ success: true, data: aiResponse });
