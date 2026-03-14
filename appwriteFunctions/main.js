@@ -3,10 +3,10 @@ import fetch from 'node-fetch';
 // This function will run on the Appwrite server
 export default async ({ req, res, log, error }) => {
   // Extract environment variable specifically during function execution
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
+  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY; 
   
-  if (!GEMINI_API_KEY) {
-    error("Gemini API key is not configured.");
+  if (!OPENROUTER_API_KEY) {
+    error("OpenRouter API key is not configured.");
     return res.json({ success: false, question: 'Server configuration error.' }, 500);
   }
 
@@ -28,31 +28,46 @@ export default async ({ req, res, log, error }) => {
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://openrouter.ai/api/v1/chat/completions`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://finwise.com', // Required by OpenRouter for ranking
+          'X-Title': 'FinWise'
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: question }] }],
+          model: 'google/gemini-2.0-flash-lite-preview-02-05:free', // You can change this to any OpenRouter model
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful, concise financial assistant for the FinWise app.'
+            },
+            {
+              role: 'user',
+              content: question
+            }
+          ]
         }),
       }
     );
 
     const data = await response.json();
-    log("Gemini API Full Response:");
+    log("OpenRouter API Full Response:");
     log(JSON.stringify(data));
     
     // Add specific error checking to help debug from Appwrite console
     if (data.error) {
-      error(`Gemini Data Error: ${JSON.stringify(data.error)}`);
+      error(`OpenRouter Data Error: ${JSON.stringify(data.error)}`);
     }
 
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+    const aiResponse = data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
 
     return res.json({ success: true, data: aiResponse });
 
   } catch (err) {
-    error("Error calling Gemini API: " + err.question);
-    return res.json({ success: false, question: 'Failed to fetch AI response.' }, 500);
+    error("Error calling OpenRouter API: " + (err.message || err));
+    return res.json({ success: false, message: 'Failed to fetch AI response.' }, 500);
   }
 };

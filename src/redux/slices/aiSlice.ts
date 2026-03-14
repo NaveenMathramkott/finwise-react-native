@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { functions } from "../../api/appwrite";
 
 interface Message {
   id: string;
@@ -32,29 +33,6 @@ const initialState: AIState = {
   ],
 };
 
-// Mocked AI API call
-const mockAiResponse = async (question: string): Promise<string> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const responses: { [key: string]: string } = {
-        "how much did i spend on food":
-          "You've spent approximately $450 on food this month, which is 15% more than last month.",
-        "show me my largest expenses":
-          "Your largest expenses this month are: Rent ($1,200), Groceries ($350), and Utilities ($150).",
-        "give me saving tips":
-          "Consider setting a budget for dining out and review your monthly subscriptions to identify any unused services.",
-        "compare this month with last month":
-          "Your total spending is down by 5% compared to last month. Great job!",
-      };
-      const key = question.toLowerCase();
-      resolve(
-        responses[key] ||
-          "I'm sorry, I don't have that information right now. I'm still learning!",
-      );
-    }, 1500);
-  });
-};
-
 export const sendMessage = createAsyncThunk(
   "ai/sendMessage",
   async (
@@ -62,9 +40,38 @@ export const sendMessage = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const response = await mockAiResponse(question);
-      return { question, answer: response };
+      const functionId =
+        process.env.EXPO_PUBLIC_FUNCTION_ID || "69b4f46f0003ce7d01c4";
+
+      const response = await functions.createExecution(
+        functionId,
+        JSON.stringify({ question }),
+      );
+
+      // Handle empty or error response body gracefully
+      let aiResult;
+      try {
+        aiResult = response.responseBody
+          ? JSON.parse(response.responseBody)
+          : null;
+        console.log("AI Response:", aiResult);
+      } catch (parseError) {
+        console.error("Failed to parse response body:", response.responseBody);
+        return rejectWithValue("Failed to parse AI response");
+      }
+
+      if (aiResult && aiResult.success) {
+        return { question, answer: aiResult.data };
+      } else {
+        const errorMessage =
+          aiResult?.message ||
+          aiResult?.question ||
+          response.errors ||
+          "Function returned an invalid response";
+        return rejectWithValue(errorMessage);
+      }
     } catch (error: any) {
+      console.error("Appwrite Execution Error:", error);
       return rejectWithValue(error.message || "Failed to get AI response");
     }
   },
