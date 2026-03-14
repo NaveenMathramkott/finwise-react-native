@@ -154,7 +154,7 @@ const ExpensesScreen = ({ navigation }: any) => {
             <View>
                 <Text variant="headlineMedium" style={styles.screenTitle}>My Expenses</Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    {/* Monthly Spending: <Text variant="labelLarge" style={{ color: theme.colors.primary }}>AED{totalThisMonth.toFixed(2)}</Text> */}
+                    Monthly Spending: <Text variant="labelLarge" style={{ color: theme.colors.primary }}>AED{Number(totalThisMonth).toFixed(2)}</Text>
                 </Text>
             </View>
             <TouchableOpacity 
