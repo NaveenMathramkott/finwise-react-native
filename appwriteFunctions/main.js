@@ -38,7 +38,7 @@ export default async ({ req, res, log, error }) => {
           'X-Title': 'FinWise'
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-exp:free', // Using the stable experimental free Flash model
+          model: 'qwen/qwen3-coder:free', // Using the free Qwen Coder model
           messages: [
             {
               role: 'system',
